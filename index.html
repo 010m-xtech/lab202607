@@ -1,182 +1,347 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ビール体験アプリ</title>
-    <style>
-        body { font-family: sans-serif; background: #fff8e1; text-align: center; padding: 20px; color: #333; }
-        .container { background: white; padding: 20px; border-radius: 15px; max-width: 450px; margin: 0 auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .hidden { display: none !important; }
-        .q-title { font-weight: bold; margin-top: 20px; display: block; text-align: left; }
-        label { display: block; text-align: left; margin: 8px 0; cursor: pointer; }
-        textarea, select, input[type="number"] { width: 100%; box-sizing: border-box; padding: 10px; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; }
-        textarea { height: 60px; }
-        video { width: 100%; border-radius: 10px; margin-top: 15px; background: #000; }
-        button { width: 100%; padding: 15px; margin-top: 20px; background: #ffc107; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 1.1em; }
-        
-        /* ゲームリンクボタンのスタイル */
-        .game-link-btn { display: block; width: 100%; box-sizing: border-box; text-decoration: none; padding: 15px; margin-top: 15px; background: #ff9800; color: white; border-radius: 30px; font-weight: bold; font-size: 1.1em; text-align: center; transition: background 0.2s; border: none; cursor: pointer; font-family: sans-serif; }
-        .game-link-btn:hover { background: #e65100; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>スライドパズル</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a0f08;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #fff;
+    }
 
-        /* 追加した案内テキスト用のスタイル */
-        .survey-guide-text { margin-top: 30px; margin-bottom: 5px; font-size: 1em; color: #333; }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 5px;
+      color: #ebdcb9;
+    }
 
-        /* 安心注記用のスタイル */
-        .notice-text { font-size: 10px; color: #777; text-align: left; margin-top: 30px; line-height: 1.4; border-top: 1px dashed #ddd; padding-top: 10px; }
-    </style>
+    p {
+      font-size: 13px;
+      margin-bottom: 15px;
+      color: #ccc;
+    }
+
+    /* 難易度切り替えの帯 */
+    .mode-select {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .mode-btn {
+      padding: 6px 18px;
+      border: 2px solid #82604a;
+      background: #2b1d11;
+      color: #ebdcb9;
+      font-weight: bold;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .mode-btn.active {
+      background: #ebdcb9;
+      color: #2b1d11;
+      border-color: #ebdcb9;
+    }
+
+    /* パズルの外枠（360px固定） */
+    #puzzle-container {
+      position: relative;
+      width: 360px;
+      height: 360px;
+      background: #2b1d11;
+      border: 4px solid #82604a;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      display: grid;
+      gap: 2px;
+      padding: 2px;
+    }
+
+    /* 各ピース */
+    .piece {
+      width: 100%;
+      height: 100%;
+      background-size: 352px 352px; /* 枠の内寸に画像をフィットさせる */
+      background-repeat: no-repeat;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: transform 0.1s ease;
+      /* 【重要】ここに完成時の画像を登録します（ミニ見本や初級モードもすべて自動連動します） */
+      background-image: url('image.png'); 
+    }
+    .piece:active {
+      transform: scale(0.95);
+    }
+
+    .empty {
+      background: #2b1d11 !important;
+      cursor: default;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    /* 下部コントロールエリア */
+    .bottom-control {
+      margin-top: 20px;
+      width: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5px;
+    }
+
+    /* 左下のミニ完成図見本 */
+    .sample-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+    .sample-image {
+      width: 80px;
+      height: 80px;
+      border: 2px solid #82604a;
+      border-radius: 4px;
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    .sample-box span {
+      font-size: 11px;
+      color: #ebdcb9;
+      font-weight: bold;
+    }
+
+    /* シャッフルボタン */
+    #shuffle-btn {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 50px;
+      background: #b81c22;
+      color: white;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      height: 45px;
+      align-self: flex-end;
+      margin-bottom: 5px;
+    }
+    #shuffle-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* クリア画面 */
+    #clear-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      border-radius: 4px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    #clear-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .clear-panel {
+      background: #fffdf7;
+      color: #333;
+      padding: 25px 40px;
+      border-radius: 16px;
+      text-align: center;
+      border: 3px solid #34c759;
+    }
+    .clear-panel h2 { color: #34c759; margin-bottom: 10px; }
+    .clear-panel button {
+      padding: 10px 25px;
+      border: none;
+      border-radius: 20px;
+      background: #34c759;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+  </style>
 </head>
 <body>
 
-<div class="container">
-    <div id="step-video">
-        <h2>こだわりを見てから挑戦！</h2>
-        <video id="myVideo" src="https://010m-xtech.github.io/mymovie/026200_20260526.mp4" playsinline muted autoplay></video>
-        <div style="margin-top: 10px;">
-            <button id="muteBtn" onclick="toggleMute()" style="width: 80%; background: #4CAF50; font-size: 0.9em; padding: 10px; color:white;">
-                🔊 音を出す（ミュート解除）
-            </button>
-        </div>
-        <p id="video-msg" style="margin-top: 10px;">動画を最後まで見てね...</p>
-        <button id="toSurveyBtn" class="hidden" onclick="showSurvey()">アンケートに答えて挑戦！</button>
+  <h1>スライドパズル</h1>
+  <p>隣り合うピースをタップして絵を完成させよう！</p>
+
+  <div class="mode-select">
+    <button id="btn-easy" class="mode-btn active" onclick="changeMode(3)">初級 (3×3)</button>
+    <button id="btn-hard" class="mode-btn" onclick="changeMode(4)">上級 (4×4)</button>
+  </div>
+
+  <div style="position: relative;">
+    <div id="puzzle-container"></div>
+    
+    <div id="clear-overlay">
+      <div class="clear-panel">
+        <h2>クリア！</h2>
+        <p>やったね！綺麗に完成したよ！</p>
+        <button id="retry-btn">もう一度遊ぶ</button>
+      </div>
     </div>
+  </div>
 
-    <div id="step-survey" class="hidden">
-        <h2>🍺 生ビールアンケート</h2>
-
-        <span class="q-title">A. あなたの性別を教えてください</span>
-        <select id="gender">
-            <option value="男性">男性</option>
-            <option value="女性">女性</option>
-        </select>
-
-        <span class="q-title">B. 本日のご来店人数を教えてください</span>
-        <select id="guests">
-            <option value="1人">1人</option>
-            <option value="2人">2人</option>
-            <option value="3人以上">3人以上</option>
-        </select>
-
-        <span class="q-title">1. 当店の生ビールは何点ですか？</span>
-        <select id="score">
-            <option value="5">5点（最高！）</option>
-            <option value="4">4点</option>
-            <option value="3">3点</option>
-            <option value="2">2点</option>
-            <option value="1">1点</option>
-        </select>
-
-        <span class="q-title">2. こだわりを感じますか？（複数選択可）</span>
-        <label><input type="checkbox" id="check1"> クリーミーな泡</label>
-        <label><input type="checkbox" id="check2"> なめらかな口当たり</label>
-        <label><input type="checkbox" id="check3"> 雑味のない味わい</label>
-        <label><input type="checkbox" id="check4"> 液：泡＝7：3</label>
-        <label><input type="checkbox" id="check5"> こだわりを感じる</label>
-
-        <span class="q-title">3. 飲んだ感想を教えてください</span>
-        <textarea id="comment" placeholder="感想をお聞かせください"></textarea>
-        
-        <p class="survey-guide-text">アンケートに回答したらゲームに挑戦</p>
-        <div>
-            <button class="game-link-btn" onclick="submitAndRedirect('今宵の運試し', 'https://010m-xtech.github.io/test/fukuroumikuji')">今宵の運試し</button>
-            <button class="game-link-btn" style="background: #e73c84;" onclick="submitAndRedirect('相性占い', 'https://010m-xtech.github.io/minigame/aishouranai/')">相性占い</button>
-            <button class="game-link-btn" style="background: #00aa6e;" onclick="submitAndRedirect('ARふくろうスナップ', 'https://010m-xtech.github.io/test/fukurou_nagoyajyou')">ARふくろうスナップ</button>
-        </div>
-
-        <div class="notice-text">
-            ※当システムではローカルストレージを使用しこのアプリ専用の識別番号を発行しています。個人を特定する情報は一切取得いたしません。
-        </div>
+  <div class="bottom-control">
+    <div class="sample-box">
+      <div id="sample-img-view" class="sample-image"></div>
+      <span>完成図</span>
     </div>
-</div>
+    <button id="shuffle-btn">混ぜなおす</button>
+  </div>
 
-<script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const shopName = urlParams.get('shop') || "不明な店舗";
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz7V2zRpknWfArpQe-t4UXruqH0Z6CZO4W0whYIMHvUT6SBRpfP0-dMU4VbjBaQzYD2/exec"; // ★URLを変更した場合はここに新しいものを貼る
+  <script>
+    let gridSize = 3; // デフォルトは初級(3x3)スタート
+    let board = [];
+    
+    const container = document.getElementById('puzzle-container');
+    const overlay = document.getElementById('clear-overlay');
 
-    let deviceId = ""; // 識別IDを保持する変数
-
-    // ログ送信関数（★deviceIdも一緒にGASへ送るよう修正）
-    async function sendStepLog(stepName) {
-        try {
-            await fetch(GAS_URL, {
-                method: "POST",
-                mode: "no-cors",
-                body: JSON.stringify({ shop: shopName, step: stepName, deviceId: deviceId })
-            });
-        } catch (e) { console.error(e); }
+    // パズルの初期設定（難易度に応じてマス目を自動変更）
+    function initPuzzle() {
+      overlay.classList.remove('show');
+      syncSampleImage();
+      
+      // グリッドスタイルを動的に変更 (3x3 か 4x4 か)
+      container.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+      container.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+      
+      // ピース配列を新しく作成 (3x3なら0〜8, 4x4なら0〜15)
+      const totalPieces = gridSize * gridSize;
+      board = [];
+      for(let i = 0; i < totalPieces; i++) {
+        board.push(i);
+      }
+      
+      shuffleBoard();
     }
 
-    // ① アクセス時：識別IDを確定させてからログを飛ばすよう修正
-    window.onload = () => {
-        // 先に記憶エリアから識別IDを読み込む（無ければその場で作る）
-        let savedId = localStorage.getItem('beer_app_device_id');
-        if (!savedId) {
-            savedId = 'dev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
-            localStorage.setItem('beer_app_device_id', savedId);
-        }
-        deviceId = savedId; // 確定したIDをセット
+    // 見本画像の自動同期
+    function syncSampleImage() {
+      const dummy = document.createElement('div');
+      dummy.className = 'piece';
+      document.body.appendChild(dummy);
+      const bgImg = window.getComputedStyle(dummy).backgroundImage;
+      document.body.removeChild(dummy);
+      document.getElementById('sample-img-view').style.backgroundImage = bgImg;
+    }
 
-        // IDが確定した直後にアクセスログを送信
-        sendStepLog("①URLアクセス");
+    // 難易度ボタンが押されたときの処理
+    function changeMode(size) {
+      gridSize = size;
+      document.getElementById('btn-easy').classList.toggle('active', size === 3);
+      document.getElementById('btn-hard').classList.toggle('active', size === 4);
+      initPuzzle();
+    }
 
-        const v = document.getElementById('myVideo');
-        v.onended = () => {
-            document.getElementById('video-msg').innerText = "日々精進してまいります";
-            document.getElementById('toSurveyBtn').classList.remove('hidden');
-            if(document.getElementById('muteBtn')) document.getElementById('muteBtn').classList.add('hidden');
-        };
-    };
-
-    function toggleMute() {
-        const v = document.getElementById('myVideo');
-        const btn = document.getElementById('muteBtn');
-        if (v.muted) {
-            v.muted = false; v.volume = 1.0;
-            btn.innerText = "🔇 音を消す"; btn.style.background = "#ccc";
+    // 盤面の描画
+    function renderBoard() {
+      container.innerHTML = '';
+      const totalPieces = gridSize * gridSize;
+      const emptyValue = totalPieces - 1; // 一番最後の数字を空白にする
+      const piecePixelSize = 352 / gridSize; // 1ピースあたりの表示ピクセル幅を自動計算
+      
+      board.forEach((pieceValue, currentPos) => {
+        const cell = document.createElement('div');
+        
+        if (pieceValue === emptyValue) {
+          cell.className = 'piece empty';
         } else {
-            v.muted = true;
-            btn.innerText = "🔊 音を出す"; btn.style.background = "#4CAF50";
+          cell.className = 'piece';
+          
+          // 難易度に合わせて画像の切り出し位置(背景座標)を自動計算する職人技
+          const correctRow = Math.floor(pieceValue / gridSize);
+          const correctCol = pieceValue % gridSize;
+          const bgX = -correctCol * piecePixelSize;
+          const bgY = -correctRow * piecePixelSize;
+          
+          cell.style.backgroundPosition = `${bgX}px ${bgY}px`;
+          cell.onclick = () => movePiece(currentPos);
         }
+        
+        container.appendChild(cell);
+      });
     }
 
-    function showSurvey() {
-        sendStepLog("②動画視聴完了"); 
-        document.getElementById('step-video').classList.add('hidden');
-        document.getElementById('step-survey').classList.remove('hidden');
+    // ピースの移動
+    function movePiece(currentPos) {
+      const totalPieces = gridSize * gridSize;
+      const emptyValue = totalPieces - 1;
+      const emptyPos = board.indexOf(emptyValue);
+      
+      const isNeighbor = 
+        (Math.abs(currentPos - emptyPos) === 1 && Math.floor(currentPos / gridSize) === Math.floor(emptyPos / gridSize)) || 
+        (Math.abs(currentPos - emptyPos) === gridSize);
+      
+      if (isNeighbor) {
+        board[emptyPos] = board[currentPos];
+        board[currentPos] = emptyValue;
+        
+        renderBoard();
+        checkWin();
+      }
     }
 
-    // ボタンが押されたらデータを送ってから遷移する関数
-    async function submitAndRedirect(gameName, targetUrl) {
-        sendStepLog(`③アンケート回答完了(${gameName})`); 
+    // シャッフル処理（初級は100回、上級は200回スライドさせて崩す）
+    function shuffleBoard() {
+      overlay.classList.remove('show');
+      const totalPieces = gridSize * gridSize;
+      const emptyValue = totalPieces - 1;
+      
+      // 一旦リセット
+      board = [];
+      for(let i = 0; i < totalPieces; i++) board.push(i);
+      
+      const shuffleCount = gridSize === 3 ? 100 : 200;
+      
+      for (let i = 0; i < shuffleCount; i++) {
+        const emptyPos = board.indexOf(emptyValue);
+        const validMoves = [];
         
-        const surveyData = {
-            shop: shopName,
-            gender: document.getElementById('gender').value,   
-            guests: document.getElementById('guests').value,   
-            score: document.getElementById('score').value,
-            comment: document.getElementById('comment').value,
-            p1: document.getElementById('check1').checked,
-            p2: document.getElementById('check2').checked,
-            p3: document.getElementById('check3').checked,
-            p4: document.getElementById('check4').checked,
-            p5: document.getElementById('check5').checked,
-            gameResult: `遷移先：${gameName}`,
-            deviceId: deviceId // メイン回答用にもIDを合流させる
-        };
+        if (emptyPos % gridSize > 0) validMoves.push(emptyPos - 1); 
+        if (emptyPos % gridSize < gridSize - 1) validMoves.push(emptyPos + 1); 
+        if (emptyPos >= gridSize) validMoves.push(emptyPos - gridSize); 
+        if (emptyPos < gridSize * (gridSize - 1)) validMoves.push(emptyPos + gridSize); 
         
-        try {
-            await fetch(GAS_URL, { 
-                method: "POST", 
-                mode: "no-cors", 
-                body: JSON.stringify(surveyData) 
-            });
-        } catch (e) { 
-            console.error(e); 
-        } finally {
-            window.location.href = targetUrl;
-        }
+        const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+        board[emptyPos] = board[randomMove];
+        board[randomMove] = emptyValue;
+      }
+      renderBoard();
     }
-</script>
+
+    // クリアチェック
+    function checkWin() {
+      const isWin = board.every((val, idx) => val === idx);
+      if (isWin) {
+        setTimeout(() => {
+          overlay.classList.add('show');
+        }, 200);
+      }
+    }
+
+    document.getElementById('shuffle-btn').onclick = shuffleBoard;
+    document.getElementById('retry-btn').onclick = initPuzzle;
+
+    // 初回起動（遊びやすいように「初級」からスタートします）
+    initPuzzle();
+  </script>
 </body>
 </html>

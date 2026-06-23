@@ -1,1 +1,201 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ARトラック撮影カメラ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
 
+    /* スタート画面（ブラウザのセキュリティ制限をクリアするための最初の1タップ用） */
+    #start-overlay {
+      position: fixed; inset: 0; background: #fff8e1; z-index: 100;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+    }
+    .start-btn {
+      padding: 20px 40px; background: #ffc107; color: #333; font-size: 1.3em;
+      font-weight: bold; border: none; border-radius: 50px; cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    /* カメラ映像のコンテナ */
+    #camera-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+    video { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ★動かせるトラック画像（フレーム）のスタイル */
+    #track-frame {
+      position: absolute;
+      width: 200px; /* 初期サイズ */
+      top: 50%; left: 50%;
+      transform: translate(-30%, -30%); /* 中央寄せの初期位置 */
+      touch-action: none; /* ブラウザ標準のスクロールなどを無効化（超重要） */
+      cursor: move;
+      user-select: none;
+    }
+
+    /* シャッターボタンエリア */
+    .controls {
+      position: absolute; bottom: 30px; left: 0; width: 100%;
+      display: flex; justify-content: center; align-items: center; z-index: 10;
+    }
+    .shutter-btn {
+      width: 75px; height: 75px; background: white; border: 5px solid #ccc;
+      border-radius: 50%; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .shutter-btn:active { transform: scale(0.9); }
+
+    /* 撮影した写真のプレビューポップアップ */
+    #photo-preview-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 50;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+    }
+    #captured-image { max-width: 100%; max-height: 70%; border-radius: 10px; box-shadow: 0 4px 20px rgba(255,255,255,0.2); }
+    .preview-btns { margin-top: 20px; display: flex; gap: 20px; }
+    .sub-btn { padding: 12px 25px; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 1em; }
+    .retake { background: #555; color: white; }
+    .save-msg { color: #aaa; font-size: 12px; margin-top: 15px; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <div id="start-overlay">
+    <h2 style="color: #333; margin-bottom: 30px; text-align: center;">トラック持ち上げ撮影に<br>挑戦しよう！</h2>
+    <button class="start-btn" onclick="startCamera()">カメラを起動してスタート</button>
+  </div>
+
+  <div id="camera-container">
+    <video id="video" autoplay playsinline></video>
+    
+    <img id="track-frame" src="image.png" alt="イメージ">
+
+    <div class="controls">
+      <button class="shutter-btn" onclick="takePhoto()"></button>
+    </div>
+  </div>
+
+  <div id="photo-preview-overlay" class="hidden">
+    <h3 style="color: white; margin-bottom: 15px;">バッチリ撮れたかな？</h3>
+    <img id="captured-image" src="" alt="撮影された写真">
+    <div class="preview-btns">
+      <button class="sub-btn retake" onclick="retakePhoto()">もう一度撮る</button>
+    </div>
+    <p class="save-msg">※スマホの標準機能（画像を長押し）で写真を保存してね！</p>
+  </div>
+
+  <canvas id="canvas" class="hidden"></canvas>
+
+  <script>
+    const video = document.getElementById('video');
+    const track = document.getElementById('track-frame');
+    let currentScale = 1;
+    let startDist = 0;
+    let posX = 0, posY = 0;
+    let startX = 0, startY = 0;
+
+    // カメラの起動処理
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" }, // 背面カメラを指定
+          audio: false
+        });
+        video.srcObject = stream;
+        document.getElementById('start-overlay').classList.add('hidden');
+        
+        // 初期位置を画面中央にセット
+        posX = window.innerWidth / 2;
+        posY = window.innerHeight / 2;
+        updateTransform();
+      } catch (err) {
+        alert("カメラの起動に失敗しました。ブラウザのカメラ権限を許可してください。");
+        console.error(err);
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // ★ トラック画像を指で移動・拡大縮小（ピンチ・スワイプ）する処理
+    // ──────────────────────────────────────────────────────────
+    
+    // 2本の指の間の距離を計算する関数
+    function getDistance(touches) {
+      return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
+    }
+
+    track.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        // 1本指での移動スタート
+        startX = e.touches[0].clientX - posX;
+        startY = e.touches[0].clientY - posY;
+      } else if (e.touches.length === 2) {
+        // 2本指での拡大縮小スタート
+        startDist = getDistance(e.touches);
+      }
+    });
+
+    track.addEventListener('touchmove', (e) => {
+      e.preventDefault(); // 画面全体のスクロールを防ぐ
+
+      if (e.touches.length === 1) {
+        // 移動処理
+        posX = e.touches[0].clientX - startX;
+        posY = e.touches[0].clientY - startY;
+      } else if (e.touches.length === 2) {
+        // 拡大縮小処理
+        const dist = getDistance(e.touches);
+        const scaleFactor = dist / startDist;
+        currentScale = Math.min(Math.max(currentScale * scaleFactor, 0.3), 3.0); // 最小0.3倍、最大3倍に制限
+        startDist = dist;
+      }
+      updateTransform();
+    });
+
+    function updateTransform() {
+      // CSSのtransformで位置とサイズを同時に更新
+      track.style.transform = `translate(-50%, -50%) translate(${posX}px, ${posY}px) scale(${currentScale})`;
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // ★ 写真撮影 ＆ 合成処理
+    // ──────────────────────────────────────────────────────────
+    function takePhoto() {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+
+      // カメラ映像の実際の解像度に合わせてキャンバスのサイズを設定
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // 1. まず背景としてカメラの映像を描画
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // 2. 次に、現在のトラックの画面上の位置・大きさを計算してキャンバス上に上書き合成
+      const videoRect = video.getBoundingClientRect();
+      const trackRect = track.getBoundingClientRect();
+
+      // スケール比率の計算（画面上のサイズから実際のカメラ解像度のサイズへ変換）
+      const scaleX = canvas.width / videoRect.width;
+      const scaleY = canvas.height / videoRect.height;
+
+      const drawX = (trackRect.left - videoRect.left) * scaleX;
+      const drawY = (trackRect.top - videoRect.top) * scaleY;
+      const drawWidth = trackRect.width * scaleX;
+      const drawHeight = trackRect.height * scaleY;
+
+      // トラック画像をキャンバスに描画
+      ctx.drawImage(track, drawX, drawY, drawWidth, drawHeight);
+
+      // 3. 完成した画像をプレビュー画面に表示
+      const dataUrl = canvas.toDataURL('image/png');
+      document.getElementById('captured-image').src = dataUrl;
+      document.getElementById('photo-preview-overlay').classList.remove('hidden');
+    }
+
+    function retakePhoto() {
+      document.getElementById('photo-preview-overlay').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

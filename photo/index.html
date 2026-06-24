@@ -37,16 +37,48 @@
     #camera-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
     video { width: 100%; height: 100%; object-fit: cover; }
 
-    /* 動かせるトラック画像 */
+    /* ★動かせるトラック画像（初期配置を完全中央にするため top/left を 50% に修正） */
     #track-frame {
       position: absolute;
       width: 220px; 
-      top: 0; left: 0; 
-      transform: translate(-50%, -50%); 
+      top: 50%; left: 50%; 
+      /* translate(-50%, -50%) で画像の中心が画面の完全中央に重なります */
+      transform: translate(-50%, -50%) scale(1); 
       touch-action: none;
       cursor: move;
       user-select: none;
       z-index: 10;
+      display: none; /* カメラ起動前は隠しておく */
+    }
+
+    /* ★【新機能】トラックが右から左へ通り過ぎて中央に止まるアニメーション演出 */
+    .truck-entrance-animation {
+      display: block !important;
+      pointer-events: none; /* アニメーション中は指での操作を無効化 */
+      animation: truckDriveBy 3.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+
+    @keyframes truckDriveBy {
+      0% {
+        /* 始まり：画面の遥か右外側 */
+        left: 150%;
+        transform: translate(-50%, -50%) scale(1.2); /* 最初は近くを走るイメージで少し大きめ */
+      }
+      35% {
+        /* 1回目：猛スピードで左外側へ走り去る */
+        left: -50%;
+        transform: translate(-50%, -50%) scale(1.2);
+      }
+      45% {
+        /* 画面外の裏側で方向転換しつつ、次の登場位置（右外側）へワープ、サイズを通常に戻す */
+        left: 150%;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      100% {
+        /* 2回目：右から入ってきて、画面の完全中央（50%）で静かにブレーキをかけて止まる */
+        left: 50%;
+        transform: translate(-50%, -50%) scale(1);
+      }
     }
 
     /* 触ると消える案内メッセージ */
@@ -65,20 +97,17 @@
       text-align: center;
       z-index: 20;
       pointer-events: none; 
+      opacity: 0; /* 最初は透明にしておき、トラックが止まったら出す */
       transition: opacity 0.5s ease;
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    /* ★カメラ画面の右下に最初から表示しておくロゴのスタイル */
+    /* カメラ画面の右下のロゴ */
     #camera-logo-overlay {
       position: absolute;
-      bottom: 3%;
-      right: 3%;
-      width: 25%; /* 画面横幅の15%のサイズで表示 */
-      max-width: 150px; /* 大きくなりすぎないように制限 */
-      z-index: 12; /* トラックやビデオの上に重ねる */
-      pointer-events: none; /* ロゴを触ってもトラック操作の邪魔をしない */
-      opacity: 0.8; /* 撮影前は少しだけ透けさせておしゃれに（お好みで1にしてもOK） */
+      bottom: 3%; right: 3%;
+      width: 15%; max-width: 80px; 
+      z-index: 12; pointer-events: none; opacity: 0.8;
     }
 
     /* シャッターボタンエリア */
@@ -142,12 +171,13 @@
     const video = document.getElementById('video');
     const track = document.getElementById('track-frame');
     const guide = document.getElementById('guide-message');
-    const logoImg = document.getElementById('camera-logo-overlay'); // ロゴ要素を取得
+    const logoImg = document.getElementById('camera-logo-overlay');
     
     let currentScale = 1;
     let startDist = 0;
-    let posX = 0, posY = 0;
+    let posX = 0, posY = 0; // スワイプで移動した「ズレ（差分）」を記録する変数に変更
     let startX = 0, startY = 0;
+    let isAnimationFinished = false; // アニメーションが終わったかどうかのフラグ
 
     // カメラ起動処理
     async function startCamera() {
@@ -159,10 +189,21 @@
         video.srcObject = stream;
         document.getElementById('start-overlay').classList.add('hidden');
         
-        // カメラ起動時に「画面の完全中央」にトラックを設定
-        posX = window.innerWidth / 2;
-        posY = window.innerHeight / 2;
-        updateTransform();
+        // ★演出スタート：トラックにアニメーション用のCSSクラスを付与
+        track.classList.add('truck-entrance-animation');
+        
+        // ★アニメーション（3.5秒）が終わった瞬間の処理
+        setTimeout(() => {
+          isAnimationFinished = true;
+          track.classList.remove('truck-entrance-animation'); // アニメ用クラスを外す
+          track.style.display = 'block'; // 通常表示に固定
+          pointerEventsNone = false;
+          track.style.pointerEvents = 'auto'; // 指での操作を解禁！
+          
+          // トラックが止まったら案内メッセージをふわっと出す
+          if (guide) guide.style.opacity = '1';
+        }, 3500);
+
       } catch (err) {
         alert("カメラの起動に失敗しました。ブラウザの設定でカメラのアクセス権限を許可してください。");
         console.error(err);
@@ -180,15 +221,17 @@
     }
 
     // ──────────────────────────────────────────────────────────
-    // ★ トラック画像の操作
+    // ★ トラック画像の操作（完全中央基準にアップデート）
     // ──────────────────────────────────────────────────────────
     function getDistance(touches) {
       return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
     }
 
     track.addEventListener('touchstart', (e) => {
+      if (!isAnimationFinished) return; // アニメーション中は触らせない
       dismissGuide(); 
       if (e.touches.length === 1) {
+        // 中央(50%, 50%)からの移動差分を計算
         startX = e.touches[0].clientX - posX;
         startY = e.touches[0].clientY - posY;
       } else if (e.touches.length === 2) {
@@ -197,6 +240,7 @@
     });
 
     track.addEventListener('touchmove', (e) => {
+      if (!isAnimationFinished) return; // アニメーション中は動かせない
       e.preventDefault(); 
 
       if (e.touches.length === 1) {
@@ -212,7 +256,8 @@
     });
 
     function updateTransform() {
-      track.style.transform = `translate(${posX}px, ${posY}px) scale(${currentScale})`;
+      // 完全中央の位置（translate(-50%, -50%)）を維持したまま、指で動かした距離（posX, posY）分だけずらす
+      track.style.transform = `translate(-50%, -50%) translate(${posX}px, ${posY}px) scale(${currentScale})`;
     }
 
     // ──────────────────────────────────────────────────────────
@@ -225,10 +270,8 @@
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
-      // 1. 背景（カメラ映像）を描画
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      // 2. トラックの位置とサイズを計算して合成
       const videoRect = video.getBoundingClientRect();
       const trackRect = track.getBoundingClientRect();
 
@@ -242,8 +285,6 @@
 
       ctx.drawImage(track, drawX, drawY, drawWidth, drawHeight);
 
-      // 3. 右下に表示されているロゴの見た目通りに写真にも合成
-      // 写真全体の15%のサイズで右下に綺麗に収めます
       const logoWidth = canvas.width * 0.15; 
       const logoHeight = (logoImg.naturalHeight / logoImg.naturalWidth) * logoWidth;
       
@@ -253,7 +294,6 @@
 
       ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
 
-      // 4. プレビュー表示
       const dataUrl = canvas.toDataURL('image/png');
       document.getElementById('captured-image').src = dataUrl;
       document.getElementById('photo-preview-overlay').classList.remove('hidden');

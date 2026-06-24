@@ -10,12 +10,17 @@
 
     /* 1. スタート画面 */
     #start-overlay {
-      position: fixed; inset: 0; 
-      background: url('background.png') no-repeat center center;
-      background-size: cover; z-index: 100;
-      display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
-      padding-bottom: 80px; 
-    }
+  position: fixed; 
+  inset: 0; 
+  background: url('background.png') no-repeat center center;
+  background-size: cover; 
+  z-index: 100;
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; /* ★ center（中央揃え）に変える */
+  padding-bottom: 100px;      /* ★ これで中央からさらに「下に100px」ずらす、といった微調整ができます */
+}
     .start-btn {
       padding: 20px 40px; background: #ffc107; color: #333; font-size: 1.3em;
       font-weight: bold; border: none; border-radius: 50px; cursor: pointer;
@@ -69,8 +74,8 @@
       position: absolute;
       bottom: 3%;
       right: 3%;
-      width: 15%; /* 画面横幅の15%のサイズで表示 */
-      max-width: 80px; /* 大きくなりすぎないように制限 */
+      width: 25%; /* 画面横幅の15%のサイズで表示 */
+      max-width: 150px; /* 大きくなりすぎないように制限 */
       z-index: 12; /* トラックやビデオの上に重ねる */
       pointer-events: none; /* ロゴを触ってもトラック操作の邪魔をしない */
       opacity: 0.8; /* 撮影前は少しだけ透けさせておしゃれに（お好みで1にしてもOK） */

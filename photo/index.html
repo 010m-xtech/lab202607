@@ -18,8 +18,8 @@
       display: flex; 
       flex-direction: column; 
       align-items: center; 
-      justify-content: center; /* 中央揃え */
-      padding-bottom: 100px;   /* 中央から少し下へ微調整 */
+      justify-content: center; 
+      padding-bottom: 100px;   
     }
     .start-btn {
       padding: 20px 40px; background: #ffc107; color: #333; font-size: 1.3em;
@@ -42,55 +42,31 @@
       position: absolute;
       width: 220px; 
       top: 50%; left: 50%; 
-      transform: translate(-50%, -50%) scale(1); 
+      transform: translate(-50%, -50%) scale(1) rotate(0deg); 
       touch-action: none;
       cursor: move;
       user-select: none;
       z-index: 10;
-      display: none; /* カメラ起動前は隠しておく */
+      display: none; 
     }
 
-    /* トラックが右から左へ通り過ぎて中央に止まるアニメーション演出（暴走修正版） */
+    /* トラックのアニメーション演出 */
     .truck-entrance-animation {
       display: block !important;
-      pointer-events: none; /* アニメーション中は指での操作を無効化 */
+      pointer-events: none; 
       animation: truckDriveBy 4.0s linear forwards; 
     }
 
     @keyframes truckDriveBy {
-      0% {
-        left: 150%; /* 始まり：画面の遥か右外側 */
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.2);
-      }
-      30% {
-        left: -50%; /* 1回目：猛スピードで左外側へ走り去る */
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.2);
-      }
-      31% {
-        left: -50%;
-        opacity: 0; /* 左に消えた瞬間に、一瞬で透明にする */
-        transform: translate(-50%, -50%) scale(1);
-      }
-      35% {
-        left: 150%; /* 透明な状態のまま、こっそり右外側へワープ */
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(1);
-      }
-      45% {
-        left: 150%;
-        opacity: 1; /* 右外側に到着してから、姿を現す */
-        transform: translate(-50%, -50%) scale(1);
-      }
-      100% {
-        left: 50%; /* 2回目：右から入ってきて、画面の完全中央（50%）で止まる */
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-      }
+      0% { left: 150%; opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(0deg); }
+      30% { left: -50%; opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(0deg); }
+      31% { left: -50%; opacity: 0; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+      35% { left: 150%; opacity: 0; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+      45% { left: 150%; opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+      100% { left: 50%; opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
     }
 
-    /* 触ると消える案内メッセージ */
+    /* 触ると消える案内メッセージ（回転の案内も追加しました） */
     #guide-message {
       position: absolute;
       top: 20%; left: 50%;
@@ -106,7 +82,7 @@
       text-align: center;
       z-index: 20;
       pointer-events: none; 
-      opacity: 0; /* 最初は透明にしておき、トラックが止まったら出す */
+      opacity: 0; 
       transition: opacity 0.5s ease;
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
@@ -116,8 +92,8 @@
       position: absolute;
       bottom: 3%;
       right: 3%;
-      width: 30%;        /* 大きめサイズ */
-      max-width: 200px;  /* ブレーキの上限を引き上げ */
+      width: 30%;        
+      max-width: 200px;  
       z-index: 12;
       pointer-events: none;
       opacity: 0.8;
@@ -157,7 +133,7 @@
     <video id="video" autoplay playsinline></video>
     
     <div id="guide-message">
-      🚚 トラックをスワイプで移動、<br>ピンチ（指2本）で拡大・縮小できるよ！<br>いろんなポーズで写真を撮ってシェアしよう！
+      🚚 トラックを移動、拡大・縮小！<br>指2本をひねると斜めに傾けられるよ！<br>いろんなポーズで写真を撮ってシェアしよう！
     </div>
     
     <img id="track-frame" src="image.png" alt="トラック">
@@ -186,7 +162,9 @@
     const logoImg = document.getElementById('camera-logo-overlay');
     
     let currentScale = 1;
+    let currentRotation = 0; // ★現在の回転角度（度数）を記憶する変数
     let startDist = 0;
+    let startAngle = 0;      // ★指2本の初期角度
     let posX = 0, posY = 0; 
     let startX = 0, startY = 0;
     let isAnimationFinished = false; 
@@ -194,10 +172,9 @@
     // カメラ起動処理
     async function startCamera() {
       try {
-        // カメラの映像解像度を縦長に最適化
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { 
-            facingMode: "environment",
+            facingMode: "user", // ★インカメラ（自撮り用）に変更しました！
             width: { ideal: 1280 },
             height: { ideal: 720 }
           }, 
@@ -206,15 +183,13 @@
         video.srcObject = stream;
         document.getElementById('start-overlay').classList.add('hidden');
         
-        // アニメーション用のCSSクラスを付与
         track.classList.add('truck-entrance-animation');
         
-        // アニメーション（4.0秒）が終わった瞬間の処理
         setTimeout(() => {
           isAnimationFinished = true;
           track.classList.remove('truck-entrance-animation'); 
           track.style.display = 'block'; 
-          track.style.pointerEvents = 'auto'; // 指での操作を解禁
+          track.style.pointerEvents = 'auto'; 
           
           if (guide) guide.style.opacity = '1';
         }, 4000);
@@ -225,7 +200,6 @@
       }
     }
 
-    // 案内メッセージを消す関数
     function dismissGuide() {
       if (guide && !guide.classList.contains('hidden')) {
         guide.style.opacity = '0'; 
@@ -235,57 +209,67 @@
       }
     }
 
-    // トラック画像の操作（完全中央基準）
+    // 指2本の距離を計算
     function getDistance(touches) {
       return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
     }
 
+    // ★【新機能】指2本の角度を計算する関数（回転用）
+    function getAngle(touches) {
+      const dy = touches[0].clientY - touches[1].clientY;
+      const dx = touches[0].clientX - touches[1].clientX;
+      return Math.atan2(dy, dx) * 180 / Math.PI;
+    }
+
     track.addEventListener('touchstart', (e) => {
-      if (!isAnimationFinished) return; // アニメーション中は触らせない
+      if (!isAnimationFinished) return; 
       dismissGuide(); 
       if (e.touches.length === 1) {
         startX = e.touches[0].clientX - posX;
         startY = e.touches[0].clientY - posY;
       } else if (e.touches.length === 2) {
         startDist = getDistance(e.touches);
+        startAngle = getAngle(e.touches) - currentRotation; // ★初期の指の角度と現在の画像の傾きを同期
       }
     });
 
     track.addEventListener('touchmove', (e) => {
-      if (!isAnimationFinished) return; // アニメーション中は動かせない
+      if (!isAnimationFinished) return; 
       e.preventDefault(); 
 
       if (e.touches.length === 1) {
         posX = e.touches[0].clientX - startX;
         posY = e.touches[0].clientY - startY;
       } else if (e.touches.length === 2) {
+        // 拡大縮小
         const dist = getDistance(e.touches);
         const scaleFactor = dist / startDist;
         currentScale = Math.min(Math.max(currentScale * scaleFactor, 0.2), 4.0); 
         startDist = dist;
+
+        // ★回転（斜め）処理
+        currentRotation = getAngle(e.touches) - startAngle;
       }
       updateTransform();
     });
 
     function updateTransform() {
-      track.style.transform = `translate(-50%, -50%) translate(${posX}px, ${posY}px) scale(${currentScale})`;
+      // ★ rotate(${currentRotation}deg) を追加して斜めに対応
+      track.style.transform = `translate(-50%, -50%) translate(${posX}px, ${posY}px) scale(${currentScale}) rotate(${currentRotation}deg)`;
     }
 
     // ──────────────────────────────────────────────────────────
-    // ★ 【バグ完全修正】写真撮影 ＆ 縦横比ズレ防止合成処理
+    // ★ 写真撮影 ＆ 傾き対応合成処理
     // ──────────────────────────────────────────────────────────
     function takePhoto() {
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
 
-      // 実際のビデオ映像の解像度をセット
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
-      // 1. 背景（カメラ映像）を描画
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      // 2. object-fit: cover で見切れている領域を逆算する比率計算式
       const videoRect = video.getBoundingClientRect();
       const canvasRatio = canvas.width / canvas.height;
       const screenRatio = videoRect.width / videoRect.height;
@@ -300,16 +284,27 @@
         xOffset = (canvas.width - videoRect.width * scale) / 2;
       }
 
-      // トラックの正確な描画位置を計算（つぶれ防止）
+      // トラックの位置・サイズ計算
       const trackRect = track.getBoundingClientRect();
-      const drawX = (trackRect.left - videoRect.left) * scale + xOffset;
-      const drawY = (trackRect.top - videoRect.top) * scale + yOffset;
       const drawWidth = trackRect.width * scale;
       const drawHeight = trackRect.height * scale;
+      
+      // ★画像の中心を計算（回転の中心点にするため）
+      const centerX = (trackRect.left - videoRect.left + trackRect.width / 2) * scale + xOffset;
+      const centerY = (trackRect.top - videoRect.top + trackRect.height / 2) * scale + yOffset;
 
-      ctx.drawImage(track, drawX, drawY, drawWidth, drawHeight);
+      // ★キャンバスをトラックの傾きに合わせて回転させて描画する職人技
+      ctx.save(); // 現在の状態を保存
+      ctx.translate(centerX, centerY); // トラックの中心にキャンバスの原点を移動
+      ctx.rotate(currentRotation * Math.PI / 180); // 指でひねった角度分だけキャンバスを回す
+      
+      // トラックの元の縦横比を維持して描画（すでにサイズはtrackRectで計算されているので、中心から逆算して配置）
+      const originalWidth = (track.naturalWidth || 220) * currentScale * scale;
+      const originalHeight = (track.naturalHeight || 150) * currentScale * scale;
+      ctx.drawImage(track, -originalWidth / 2, -originalHeight / 2, originalWidth, originalHeight);
+      ctx.restore(); // キャンバスの状態を元に戻す
 
-      // 3. ロゴの正確な描画位置を計算（縮小防止、画面通りのサイズに！）
+      // 3. ロゴの位置計算と描画
       const logoRect = logoImg.getBoundingClientRect();
       const logoDrawX = (logoRect.left - videoRect.left) * scale + xOffset;
       const logoDrawY = (logoRect.top - videoRect.top) * scale + yOffset;

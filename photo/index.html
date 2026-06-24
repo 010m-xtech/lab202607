@@ -10,17 +10,17 @@
 
     /* 1. スタート画面 */
     #start-overlay {
-  position: fixed; 
-  inset: 0; 
-  background: url('background.png') no-repeat center center;
-  background-size: cover; 
-  z-index: 100;
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  justify-content: center; /* ★ center（中央揃え）に変える */
-  padding-bottom: 100px;      /* ★ これで中央からさらに「下に100px」ずらす、といった微調整ができます */
-}
+      position: fixed; 
+      inset: 0; 
+      background: url('background.png') no-repeat center center;
+      background-size: cover; 
+      z-index: 100;
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; /* 中央揃え */
+      padding-bottom: 100px;   /* 中央から少し下へ微調整 */
+    }
     .start-btn {
       padding: 20px 40px; background: #ffc107; color: #333; font-size: 1.3em;
       font-weight: bold; border: none; border-radius: 50px; cursor: pointer;
@@ -34,15 +34,14 @@
     }
 
     /* カメラ映像のコンテナ */
-    #camera-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+    #camera-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; }
     video { width: 100%; height: 100%; object-fit: cover; }
 
-    /* ★動かせるトラック画像（初期配置を完全中央にするため top/left を 50% に修正） */
+    /* 動かせるトラック画像 */
     #track-frame {
       position: absolute;
       width: 220px; 
       top: 50%; left: 50%; 
-      /* translate(-50%, -50%) で画像の中心が画面の完全中央に重なります */
       transform: translate(-50%, -50%) scale(1); 
       touch-action: none;
       cursor: move;
@@ -51,11 +50,11 @@
       display: none; /* カメラ起動前は隠しておく */
     }
 
-    /* ★【新機能】トラックが右から左へ通り過ぎて中央に止まるアニメーション演出 */
-.truck-entrance-animation {
+    /* トラックが右から左へ通り過ぎて中央に止まるアニメーション演出（暴走修正版） */
+    .truck-entrance-animation {
       display: block !important;
       pointer-events: none; /* アニメーション中は指での操作を無効化 */
-      animation: truckDriveBy 4.0s linear forwards; /* 動きをスムーズにするため少し時間を調整 */
+      animation: truckDriveBy 4.0s linear forwards; 
     }
 
     @keyframes truckDriveBy {
@@ -71,21 +70,21 @@
       }
       31% {
         left: -50%;
-        opacity: 0; /* ★左に消えた瞬間に、一瞬で透明にする！ */
+        opacity: 0; /* 左に消えた瞬間に、一瞬で透明にする */
         transform: translate(-50%, -50%) scale(1);
       }
       35% {
-        left: 150%; /* ★透明な状態のまま、こっそり右外側へワープ！ */
+        left: 150%; /* 透明な状態のまま、こっそり右外側へワープ */
         opacity: 0;
         transform: translate(-50%, -50%) scale(1);
       }
       45% {
         left: 150%;
-        opacity: 1; /* ★右外側に到着してから、姿を現す！ */
+        opacity: 1; /* 右外側に到着してから、姿を現す */
         transform: translate(-50%, -50%) scale(1);
       }
       100% {
-        left: 50%; /* 2回目：右から入ってきて、画面の完全中央（50%）で静かに止まる */
+        left: 50%; /* 2回目：右から入ってきて、画面の完全中央（50%）で止まる */
         opacity: 1;
         transform: translate(-50%, -50%) scale(1);
       }
@@ -113,16 +112,16 @@
     }
 
     /* カメラ画面の右下のロゴ */
-#camera-logo-overlay {
-  position: absolute;
-  bottom: 3%;
-  right: 3%;
-  width: 30%;        /* ★ 15% から 25%（または30%）に大きくする */
-  max-width: 200px;  /* ★ 80px から 150px に引き上げる（ブレーキを解除） */
-  z-index: 12;
-  pointer-events: none;
-  opacity: 0.8;
-}
+    #camera-logo-overlay {
+      position: absolute;
+      bottom: 3%;
+      right: 3%;
+      width: 30%;        /* 大きめサイズ */
+      max-width: 200px;  /* ブレーキの上限を引き上げ */
+      z-index: 12;
+      pointer-events: none;
+      opacity: 0.8;
+    }
 
     /* シャッターボタンエリア */
     .controls {
@@ -162,7 +161,6 @@
     </div>
     
     <img id="track-frame" src="image.png" alt="トラック">
-    
     <img id="camera-logo-overlay" src="rogo.png" alt="ロゴ">
 
     <div class="controls">
@@ -189,29 +187,34 @@
     
     let currentScale = 1;
     let startDist = 0;
-    let posX = 0, posY = 0; // スワイプで移動した「ズレ（差分）」を記録する変数に変更
+    let posX = 0, posY = 0; 
     let startX = 0, startY = 0;
-    let isAnimationFinished = false; // アニメーションが終わったかどうかのフラグ
+    let isAnimationFinished = false; 
 
     // カメラ起動処理
     async function startCamera() {
       try {
+        // カメラの映像解像度を縦長に最適化
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" }, 
+          video: { 
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }, 
           audio: false
         });
         video.srcObject = stream;
         document.getElementById('start-overlay').classList.add('hidden');
         
-        // ★演出スタート：トラックにアニメーション用のCSSクラスを付与
+        // アニメーション用のCSSクラスを付与
         track.classList.add('truck-entrance-animation');
         
-// ★アニメーション（4.0秒）が終わった瞬間の処理
+        // アニメーション（4.0秒）が終わった瞬間の処理
         setTimeout(() => {
           isAnimationFinished = true;
           track.classList.remove('truck-entrance-animation'); 
           track.style.display = 'block'; 
-          track.style.pointerEvents = 'auto'; // 指での操作を解禁！
+          track.style.pointerEvents = 'auto'; // 指での操作を解禁
           
           if (guide) guide.style.opacity = '1';
         }, 4000);
@@ -232,9 +235,7 @@
       }
     }
 
-    // ──────────────────────────────────────────────────────────
-    // ★ トラック画像の操作（完全中央基準にアップデート）
-    // ──────────────────────────────────────────────────────────
+    // トラック画像の操作（完全中央基準）
     function getDistance(touches) {
       return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
     }
@@ -243,7 +244,6 @@
       if (!isAnimationFinished) return; // アニメーション中は触らせない
       dismissGuide(); 
       if (e.touches.length === 1) {
-        // 中央(50%, 50%)からの移動差分を計算
         startX = e.touches[0].clientX - posX;
         startY = e.touches[0].clientY - posY;
       } else if (e.touches.length === 2) {
@@ -268,44 +268,57 @@
     });
 
     function updateTransform() {
-      // 完全中央の位置（translate(-50%, -50%)）を維持したまま、指で動かした距離（posX, posY）分だけずらす
       track.style.transform = `translate(-50%, -50%) translate(${posX}px, ${posY}px) scale(${currentScale})`;
     }
 
     // ──────────────────────────────────────────────────────────
-    // ★ 写真撮影 ＆ 合成処理
+    // ★ 【バグ完全修正】写真撮影 ＆ 縦横比ズレ防止合成処理
     // ──────────────────────────────────────────────────────────
     function takePhoto() {
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
 
+      // 実際のビデオ映像の解像度をセット
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
+      // 1. 背景（カメラ映像）を描画
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+      // 2. object-fit: cover で見切れている領域を逆算する比率計算式
       const videoRect = video.getBoundingClientRect();
+      const canvasRatio = canvas.width / canvas.height;
+      const screenRatio = videoRect.width / videoRect.height;
+      
+      let scale, xOffset = 0, yOffset = 0;
+      
+      if (canvasRatio > screenRatio) {
+        scale = canvas.width / videoRect.width;
+        yOffset = (canvas.height - videoRect.height * scale) / 2;
+      } else {
+        scale = canvas.height / videoRect.height;
+        xOffset = (canvas.width - videoRect.width * scale) / 2;
+      }
+
+      // トラックの正確な描画位置を計算（つぶれ防止）
       const trackRect = track.getBoundingClientRect();
-
-      const scaleX = canvas.width / videoRect.width;
-      const scaleY = canvas.height / videoRect.height;
-
-      const drawX = (trackRect.left - videoRect.left) * scaleX;
-      const drawY = (trackRect.top - videoRect.top) * scaleY;
-      const drawWidth = trackRect.width * scaleX;
-      const drawHeight = trackRect.height * scaleY;
+      const drawX = (trackRect.left - videoRect.left) * scale + xOffset;
+      const drawY = (trackRect.top - videoRect.top) * scale + yOffset;
+      const drawWidth = trackRect.width * scale;
+      const drawHeight = trackRect.height * scale;
 
       ctx.drawImage(track, drawX, drawY, drawWidth, drawHeight);
 
-      const logoWidth = canvas.width * 0.15; 
-      const logoHeight = (logoImg.naturalHeight / logoImg.naturalWidth) * logoWidth;
-      
-      const margin = canvas.width * 0.03; 
-      const logoX = canvas.width - logoWidth - margin;
-      const logoY = canvas.height - logoHeight - margin;
+      // 3. ロゴの正確な描画位置を計算（縮小防止、画面通りのサイズに！）
+      const logoRect = logoImg.getBoundingClientRect();
+      const logoDrawX = (logoRect.left - videoRect.left) * scale + xOffset;
+      const logoDrawY = (logoRect.top - videoRect.top) * scale + yOffset;
+      const logoDrawWidth = logoRect.width * scale;
+      const logoDrawHeight = logoRect.height * scale;
 
-      ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+      ctx.drawImage(logoImg, logoDrawX, logoDrawY, logoDrawWidth, logoDrawHeight);
 
+      // 4. プレビュー画面の表示
       const dataUrl = canvas.toDataURL('image/png');
       document.getElementById('captured-image').src = dataUrl;
       document.getElementById('photo-preview-overlay').classList.remove('hidden');

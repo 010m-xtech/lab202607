@@ -37,6 +37,27 @@
     #camera-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; }
     video { width: 100%; height: 100%; object-fit: cover; }
 
+    /* ★カメラ切り替えボタンのスタイル（画面右上） */
+    #switch-btn {
+      position: absolute;
+      top: 25px;
+      right: 25px;
+      width: 50px;
+      height: 50px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      color: white;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 30;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    #switch-btn:active { transform: scale(0.9); }
+
     /* 動かせるトラック画像 */
     #track-frame {
       position: absolute;
@@ -66,7 +87,7 @@
       100% { left: 50%; opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
     }
 
-    /* 触ると消える案内メッセージ（回転の案内も追加しました） */
+    /* 触ると消える案内メッセージ */
     #guide-message {
       position: absolute;
       top: 20%; left: 50%;
@@ -132,6 +153,8 @@
   <div id="camera-container" ontouchstart="dismissGuide()">
     <video id="video" autoplay playsinline></video>
     
+    <button id="switch-btn" onclick="switchCamera()">🔄</button>
+    
     <div id="guide-message">
       🚚 トラックを移動、拡大・縮小！<br>指2本をひねると斜めに傾けられるよ！<br>いろんなポーズで写真を撮ってシェアしよう！
     </div>
@@ -162,42 +185,62 @@
     const logoImg = document.getElementById('camera-logo-overlay');
     
     let currentScale = 1;
-    let currentRotation = 0; // ★現在の回転角度（度数）を記憶する変数
+    let currentRotation = 0; 
     let startDist = 0;
-    let startAngle = 0;      // ★指2本の初期角度
+    let startAngle = 0;      
     let posX = 0, posY = 0; 
     let startX = 0, startY = 0;
     let isAnimationFinished = false; 
+    
+    // ★現在のカメラの向きを管理する変数（デフォルトは背面: "environment"）
+    let currentFacingMode = "environment";
+    let currentStream = null;
 
-    // カメラ起動処理
+    // カメラ起動・ストリーム設定処理
     async function startCamera() {
+      // 既存のストリームがあれば停止させる（切り替え時のバグ防止）
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { 
-            facingMode: "user", // ★インカメラ（自撮り用）に変更しました！
+            facingMode: currentFacingMode, // 変数で切り替え制御
             width: { ideal: 1280 },
             height: { ideal: 720 }
           }, 
           audio: false
         });
+        currentStream = stream;
         video.srcObject = stream;
-        document.getElementById('start-overlay').classList.add('hidden');
         
-        track.classList.add('truck-entrance-animation');
-        
-        setTimeout(() => {
-          isAnimationFinished = true;
-          track.classList.remove('truck-entrance-animation'); 
-          track.style.display = 'block'; 
-          track.style.pointerEvents = 'auto'; 
+        // 初回起動時のみスタート画面を消してアニメーションを流す
+        const startOverlay = document.getElementById('start-overlay');
+        if (!startOverlay.classList.contains('hidden')) {
+          startOverlay.classList.add('hidden');
+          track.classList.add('truck-entrance-animation');
           
-          if (guide) guide.style.opacity = '1';
-        }, 4000);
+          setTimeout(() => {
+            isAnimationFinished = true;
+            track.classList.remove('truck-entrance-animation'); 
+            track.style.display = 'block'; 
+            track.style.pointerEvents = 'auto'; 
+            if (guide) guide.style.opacity = '1';
+          }, 4000);
+        }
 
       } catch (err) {
         alert("カメラの起動に失敗しました。ブラウザの設定でカメラのアクセス権限を許可してください。");
         console.error(err);
       }
+    }
+
+    // ★【新機能】カメラを切り替える関数
+    async function switchCamera() {
+      // 背面なら前面に、前面なら背面に切り替える
+      currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+      await startCamera();
     }
 
     function dismissGuide() {
@@ -209,12 +252,11 @@
       }
     }
 
-    // 指2本の距離を計算
+    // トラック操作（各種イベント）
     function getDistance(touches) {
       return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
     }
 
-    // ★【新機能】指2本の角度を計算する関数（回転用）
     function getAngle(touches) {
       const dy = touches[0].clientY - touches[1].clientY;
       const dx = touches[0].clientX - touches[1].clientX;
@@ -229,7 +271,7 @@
         startY = e.touches[0].clientY - posY;
       } else if (e.touches.length === 2) {
         startDist = getDistance(e.touches);
-        startAngle = getAngle(e.touches) - currentRotation; // ★初期の指の角度と現在の画像の傾きを同期
+        startAngle = getAngle(e.touches) - currentRotation; 
       }
     });
 
@@ -241,26 +283,21 @@
         posX = e.touches[0].clientX - startX;
         posY = e.touches[0].clientY - startY;
       } else if (e.touches.length === 2) {
-        // 拡大縮小
         const dist = getDistance(e.touches);
         const scaleFactor = dist / startDist;
         currentScale = Math.min(Math.max(currentScale * scaleFactor, 0.2), 4.0); 
         startDist = dist;
 
-        // ★回転（斜め）処理
         currentRotation = getAngle(e.touches) - startAngle;
       }
       updateTransform();
     });
 
     function updateTransform() {
-      // ★ rotate(${currentRotation}deg) を追加して斜めに対応
       track.style.transform = `translate(-50%, -50%) translate(${posX}px, ${posY}px) scale(${currentScale}) rotate(${currentRotation}deg)`;
     }
 
-    // ──────────────────────────────────────────────────────────
-    // ★ 写真撮影 ＆ 傾き対応合成処理
-    // ──────────────────────────────────────────────────────────
+    // 写真撮影 ＆ 傾き対応合成処理
     function takePhoto() {
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
@@ -284,27 +321,22 @@
         xOffset = (canvas.width - videoRect.width * scale) / 2;
       }
 
-      // トラックの位置・サイズ計算
       const trackRect = track.getBoundingClientRect();
       const drawWidth = trackRect.width * scale;
       const drawHeight = trackRect.height * scale;
       
-      // ★画像の中心を計算（回転の中心点にするため）
       const centerX = (trackRect.left - videoRect.left + trackRect.width / 2) * scale + xOffset;
       const centerY = (trackRect.top - videoRect.top + trackRect.height / 2) * scale + yOffset;
 
-      // ★キャンバスをトラックの傾きに合わせて回転させて描画する職人技
-      ctx.save(); // 現在の状態を保存
-      ctx.translate(centerX, centerY); // トラックの中心にキャンバスの原点を移動
-      ctx.rotate(currentRotation * Math.PI / 180); // 指でひねった角度分だけキャンバスを回す
+      ctx.save(); 
+      ctx.translate(centerX, centerY); 
+      ctx.rotate(currentRotation * Math.PI / 180); 
       
-      // トラックの元の縦横比を維持して描画（すでにサイズはtrackRectで計算されているので、中心から逆算して配置）
       const originalWidth = (track.naturalWidth || 220) * currentScale * scale;
       const originalHeight = (track.naturalHeight || 150) * currentScale * scale;
       ctx.drawImage(track, -originalWidth / 2, -originalHeight / 2, originalWidth, originalHeight);
-      ctx.restore(); // キャンバスの状態を元に戻す
+      ctx.restore(); 
 
-      // 3. ロゴの位置計算と描画
       const logoRect = logoImg.getBoundingClientRect();
       const logoDrawX = (logoRect.left - videoRect.left) * scale + xOffset;
       const logoDrawY = (logoRect.top - videoRect.top) * scale + yOffset;
@@ -313,7 +345,6 @@
 
       ctx.drawImage(logoImg, logoDrawX, logoDrawY, logoDrawWidth, logoDrawHeight);
 
-      // 4. プレビュー画面の表示
       const dataUrl = canvas.toDataURL('image/png');
       document.getElementById('captured-image').src = dataUrl;
       document.getElementById('photo-preview-overlay').classList.remove('hidden');

@@ -37,7 +37,7 @@
     #camera-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; }
     video { width: 100%; height: 100%; object-fit: cover; }
 
-    /* ★カメラ切り替えボタンのスタイル（画面右上） */
+    /* カメラ切り替えボタン（画面右上） */
     #switch-btn {
       position: absolute;
       top: 25px;
@@ -147,7 +147,7 @@
 <body>
 
   <div id="start-overlay">
-    <button class="start-btn" onclick="startCamera()">LET’S PHOTO!</button>
+    <button class="start-btn" onclick="startCamera()">LET'S PHOTO!</button>
   </div>
 
   <div id="camera-container" ontouchstart="dismissGuide()">
@@ -192,13 +192,11 @@
     let startX = 0, startY = 0;
     let isAnimationFinished = false; 
     
-    // ★現在のカメラの向きを管理する変数（デフォルトは背面: "environment"）
     let currentFacingMode = "environment";
     let currentStream = null;
 
-    // カメラ起動・ストリーム設定処理
+    // カメラ起動処理
     async function startCamera() {
-      // 既存のストリームがあれば停止させる（切り替え時のバグ防止）
       if (currentStream) {
         currentStream.getTracks().forEach(track => track.stop());
       }
@@ -206,7 +204,7 @@
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { 
-            facingMode: currentFacingMode, // 変数で切り替え制御
+            facingMode: currentFacingMode, 
             width: { ideal: 1280 },
             height: { ideal: 720 }
           }, 
@@ -215,7 +213,6 @@
         currentStream = stream;
         video.srcObject = stream;
         
-        // 初回起動時のみスタート画面を消してアニメーションを流す
         const startOverlay = document.getElementById('start-overlay');
         if (!startOverlay.classList.contains('hidden')) {
           startOverlay.classList.add('hidden');
@@ -236,9 +233,8 @@
       }
     }
 
-    // ★【新機能】カメラを切り替える関数
+    // カメラ切り替え
     async function switchCamera() {
-      // 背面なら前面に、前面なら背面に切り替える
       currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
       await startCamera();
     }
@@ -252,7 +248,7 @@
       }
     }
 
-    // トラック操作（各種イベント）
+    // トラック操作
     function getDistance(touches) {
       return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
     }
@@ -297,7 +293,9 @@
       track.style.transform = `translate(-50%, -50%) translate(${posX}px, ${posY}px) scale(${currentScale}) rotate(${currentRotation}deg)`;
     }
 
-    // 写真撮影 ＆ 傾き対応合成処理
+    // ──────────────────────────────────────────────────────────
+    // ★ 【バグ撃破】写真撮影 ＆ 拡大化バグ防止合成処理
+    // ──────────────────────────────────────────────────────────
     function takePhoto() {
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
@@ -305,8 +303,10 @@
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
+      // 1. 背景（カメラ映像）を描画
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+      // 2. 画面上の見え方と実際の解像度の比率を逆算
       const videoRect = video.getBoundingClientRect();
       const canvasRatio = canvas.width / canvas.height;
       const screenRatio = videoRect.width / videoRect.height;
@@ -321,22 +321,23 @@
         xOffset = (canvas.width - videoRect.width * scale) / 2;
       }
 
+      // ★トラックの画面上での正確な大きさと中心点を計算
       const trackRect = track.getBoundingClientRect();
-      const drawWidth = trackRect.width * scale;
-      const drawHeight = trackRect.height * scale;
-      
       const centerX = (trackRect.left - videoRect.left + trackRect.width / 2) * scale + xOffset;
       const centerY = (trackRect.top - videoRect.top + trackRect.height / 2) * scale + yOffset;
 
+      // ★拡大化バグを完全に防ぐ、厳密なスタンプサイズ計算
+      const drawWidth = track.offsetWidth * currentScale * scale;
+      const drawHeight = track.offsetHeight * currentScale * scale;
+
+      // キャンバスを回転させてトラックを描画
       ctx.save(); 
       ctx.translate(centerX, centerY); 
       ctx.rotate(currentRotation * Math.PI / 180); 
-      
-      const originalWidth = (track.naturalWidth || 220) * currentScale * scale;
-      const originalHeight = (track.naturalHeight || 150) * currentScale * scale;
-      ctx.drawImage(track, -originalWidth / 2, -originalHeight / 2, originalWidth, originalHeight);
+      ctx.drawImage(track, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
       ctx.restore(); 
 
+      // 3. ロゴの描画
       const logoRect = logoImg.getBoundingClientRect();
       const logoDrawX = (logoRect.left - videoRect.left) * scale + xOffset;
       const logoDrawY = (logoRect.top - videoRect.top) * scale + yOffset;
@@ -345,6 +346,7 @@
 
       ctx.drawImage(logoImg, logoDrawX, logoDrawY, logoDrawWidth, logoDrawHeight);
 
+      // 4. プレビュー画面の表示
       const dataUrl = canvas.toDataURL('image/png');
       document.getElementById('captured-image').src = dataUrl;
       document.getElementById('photo-preview-overlay').classList.remove('hidden');

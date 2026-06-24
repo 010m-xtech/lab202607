@@ -52,31 +52,41 @@
     }
 
     /* ★【新機能】トラックが右から左へ通り過ぎて中央に止まるアニメーション演出 */
-    .truck-entrance-animation {
+.truck-entrance-animation {
       display: block !important;
       pointer-events: none; /* アニメーション中は指での操作を無効化 */
-      animation: truckDriveBy 3.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+      animation: truckDriveBy 4.0s linear forwards; /* 動きをスムーズにするため少し時間を調整 */
     }
 
     @keyframes truckDriveBy {
       0% {
-        /* 始まり：画面の遥か右外側 */
-        left: 150%;
-        transform: translate(-50%, -50%) scale(1.2); /* 最初は近くを走るイメージで少し大きめ */
-      }
-      35% {
-        /* 1回目：猛スピードで左外側へ走り去る */
-        left: -50%;
+        left: 150%; /* 始まり：画面の遥か右外側 */
+        opacity: 1;
         transform: translate(-50%, -50%) scale(1.2);
       }
+      30% {
+        left: -50%; /* 1回目：猛スピードで左外側へ走り去る */
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2);
+      }
+      31% {
+        left: -50%;
+        opacity: 0; /* ★左に消えた瞬間に、一瞬で透明にする！ */
+        transform: translate(-50%, -50%) scale(1);
+      }
+      35% {
+        left: 150%; /* ★透明な状態のまま、こっそり右外側へワープ！ */
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1);
+      }
       45% {
-        /* 画面外の裏側で方向転換しつつ、次の登場位置（右外側）へワープ、サイズを通常に戻す */
         left: 150%;
+        opacity: 1; /* ★右外側に到着してから、姿を現す！ */
         transform: translate(-50%, -50%) scale(1);
       }
       100% {
-        /* 2回目：右から入ってきて、画面の完全中央（50%）で静かにブレーキをかけて止まる */
-        left: 50%;
+        left: 50%; /* 2回目：右から入ってきて、画面の完全中央（50%）で静かに止まる */
+        opacity: 1;
         transform: translate(-50%, -50%) scale(1);
       }
     }
@@ -103,12 +113,16 @@
     }
 
     /* カメラ画面の右下のロゴ */
-    #camera-logo-overlay {
-      position: absolute;
-      bottom: 3%; right: 3%;
-      width: 15%; max-width: 80px; 
-      z-index: 12; pointer-events: none; opacity: 0.8;
-    }
+#camera-logo-overlay {
+  position: absolute;
+  bottom: 3%;
+  right: 3%;
+  width: 25%;        /* ★ 15% から 25%（または30%）に大きくする */
+  max-width: 150px;  /* ★ 80px から 150px に引き上げる（ブレーキを解除） */
+  z-index: 12;
+  pointer-events: none;
+  opacity: 0.8;
+}
 
     /* シャッターボタンエリア */
     .controls {
@@ -192,17 +206,15 @@
         // ★演出スタート：トラックにアニメーション用のCSSクラスを付与
         track.classList.add('truck-entrance-animation');
         
-        // ★アニメーション（3.5秒）が終わった瞬間の処理
+// ★アニメーション（4.0秒）が終わった瞬間の処理
         setTimeout(() => {
           isAnimationFinished = true;
-          track.classList.remove('truck-entrance-animation'); // アニメ用クラスを外す
-          track.style.display = 'block'; // 通常表示に固定
-          pointerEventsNone = false;
+          track.classList.remove('truck-entrance-animation'); 
+          track.style.display = 'block'; 
           track.style.pointerEvents = 'auto'; // 指での操作を解禁！
           
-          // トラックが止まったら案内メッセージをふわっと出す
           if (guide) guide.style.opacity = '1';
-        }, 3500);
+        }, 4000);
 
       } catch (err) {
         alert("カメラの起動に失敗しました。ブラウザの設定でカメラのアクセス権限を許可してください。");

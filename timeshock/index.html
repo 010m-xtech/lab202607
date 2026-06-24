@@ -8,14 +8,11 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body, html { width: 100%; height: 100%; overflow: hidden; background: #111; font-family: 'Arial Black', sans-serif; color: #fff; }
 
-    /* 横向きを推奨する警告画面（縦向きの時に表示） */
-    @media {
-      #rotate-message {
-        position: fixed; inset: 0; background: #000; z-index: 999;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-      }
+    /* 横向き推奨画面 */
+    #rotate-message {
+      position: fixed; inset: 0; background: #000; z-index: 999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
-    /* 横向きになったら警告を消す */
     @media screen and (orientation: landscape) {
       #rotate-message { display: none; }
     }
@@ -30,30 +27,23 @@
     }
     @keyframes bgGlow { 0% {background-position:0% 50%} 50% {background-position:100% 50%} 100% {background-position:0% 50%} }
 
-    /* ─── 左側：12番時計メーターエリア ─── */
-    .left-side {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-    }
+    /* 左側：時計メーター */
+    .left-side { flex: 1; display: flex; align-items: center; justify-content: center; }
     .clock-dial {
       position: relative; width: 280px; height: 280px;
       border: 8px solid #333; border-radius: 50%;
       background: rgba(0,0,0,0.8); box-shadow: 0 0 30px rgba(0,0,0,0.7);
     }
-    /* 時計の1〜12の数値ランプ */
     .num-lamp {
       position: absolute; width: 36px; height: 36px;
       display: flex; align-items: center; justify-content: center;
       font-size: 16px; font-weight: bold; border-radius: 50%;
-      background: #222; color: #555;
-      transform: translate(-50%, -50%);
-      transition: all 0.2s ease;
+      background: #222; color: #555; transform: translate(-50%, -50%);
     }
-    /* 正解・不正解・現在のランプ状態 */
     .num-lamp.current { background: #ffc107; color: #000; box-shadow: 0 0 15px #ffc107; }
     .num-lamp.correct { background: #4caf50; color: #fff; box-shadow: 0 0 15px #4caf50; }
     .num-lamp.wrong { background: #f44336; color: #fff; box-shadow: 0 0 15px #f44336; }
 
-    /* 中央のデジタル秒数 / 正解数 */
     .clock-center {
       position: absolute; inset: 0; margin: auto;
       width: 120px; height: 120px; border-radius: 50%;
@@ -63,19 +53,15 @@
     .time-display { font-size: 32px; color: #00ffcc; text-shadow: 0 0 10px #00ffcc; }
     .score-display { font-size: 14px; color: #aaa; margin-top: 5px; }
 
-    /* ─── 右側：クイズ＆選択肢エリア ─── */
-    .right-side {
-      flex: 1.5; display: flex; flex-direction: column; justify-content: space-between; padding: 10px 0;
-    }
+    /* 右側：クイズエリア */
+    .right-side { flex: 1.5; display: flex; flex-direction: column; justify-content: space-between; padding: 10px 0; }
     .quiz-box {
       background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px;
       border-left: 5px solid #ffc107; min-height: 80px; display: flex; align-items: center;
     }
     .quiz-text { font-size: 18px; line-height: 1.4; font-family: sans-serif; }
 
-    .choices-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-    }
+    .choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .choice-btn {
       padding: 15px; font-size: 16px; font-weight: bold; color: #fff;
       background: linear-gradient(135deg, #333, #222);
@@ -84,22 +70,16 @@
     }
     .choice-btn:active { transform: scale(0.98); background: #555; }
 
-    /* ─── 特殊エフェクト群 ─── */
-    /* タイムショック（大惨事ペナルティ） */
-    .time-shock-active {
-      animation: shake 0.1s infinite !important;
-      background: #ff0000 !important;
-    }
+    /* タイムショック演出 */
+    .time-shock-active { animation: shake 0.1s infinite !important; background: #ff0000 !important; }
     @keyframes shake {
       0% { transform: translate(3px, 3px) rotate(0deg); }
       100% { transform: translate(-3px, -3px) rotate(0deg); }
     }
 
-    /* スタート・リザルト画面のオーバーレイ */
     .overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.95);
-      z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 20px;
+      z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
     }
     .menu-btn {
       padding: 15px 40px; font-size: 20px; font-weight: bold; background: #ffc107;
@@ -112,7 +92,6 @@
 
   <div id="rotate-message">
     <p style="font-size: 24px; margin-bottom: 10px;">🔄 スマホを【横向き】にしてください</p>
-    <p style="font-size: 14px; color: #888;">本家の迫力を再現するため横画面専用です</p>
   </div>
 
   <div id="start-overlay" class="overlay">
@@ -123,12 +102,11 @@
 
   <div id="result-overlay" class="overlay hidden">
     <h1 id="result-title" style="font-size: 36px;">GAME OVER</h1>
-    <p id="result-desc" style="font-size: 20px; font-family: sans-serif;"></p>
+    <p id="result-desc" style="font-size: 20px; font-family: sans-serif; white-space: pre-wrap; text-align: center;"></p>
     <button class="menu-btn" onclick="hideResult()">もう一度挑む</button>
   </div>
 
   <div id="game-container">
-    
     <div class="left-side">
       <div class="clock-dial" id="dial">
         <div class="clock-center">
@@ -149,11 +127,9 @@
         <button class="choice-btn" onclick="selectAnswer(3)" id="btn3">選択肢4</button>
       </div>
     </div>
-
   </div>
 
   <script>
-    // 12問のクイズデータ（ここを書き換えて好きな問題にカスタムできます！）
     const quizData = [
       { q: "Q1: 日本で一番高い山はどこ？", c: ["富士山", "北岳", "奥穂高岳", "槍ヶ岳"], a: 0 },
       { q: "Q2: 信号機の「進め」は何色？", c: ["赤", "黄色", "青", "ピンク"], a: 2 },
@@ -171,98 +147,93 @@
 
     let currentQuestionIdx = 0;
     let correctCount = 0;
-    let totalTime = 60; // 合計60秒
+    let totalTime = 60;
     let gameInterval = null;
-    let questionResults = []; // 各問の正誤判定を記録 (1: 正解, -1: 不正解)
+    let questionResults = [];
 
-    // 時計の文字盤ランプを配置生成
+    // 時計ランプ生成
     const dial = document.getElementById('dial');
     for (let i = 1; i <= 12; i++) {
       const lamp = document.createElement('div');
       lamp.className = 'num-lamp';
       lamp.id = `lamp-${i}`;
       lamp.innerText = i;
-      
-      // 円周上に等間隔で配置する数学計算
       const angle = (i * 30 - 90) * (Math.PI / 180);
-      const radius = 110; // 中心からの距離
+      const radius = 110;
       const x = 140 + radius * Math.cos(angle);
       const y = 140 + radius * Math.sin(angle);
-      
       lamp.style.left = `${x}px`;
       lamp.style.top = `${y}px`;
       dial.appendChild(lamp);
     }
 
-    // ゲーム開始
     function startGame() {
       document.getElementById('start-overlay').classList.add('hidden');
       currentQuestionIdx = 0;
       correctCount = 0;
       totalTime = 60;
       questionResults = Array(12).fill(0);
+      document.getElementById('timer-text').innerText = totalTime;
+      document.getElementById('correct-text').innerText = "正解: 0/12";
       
-      // ランプの見た目をリセット
-      for(let i=1; i<=12; i++) {
-        document.getElementById(`lamp-${i}`).className = 'num-lamp';
-      }
+      for(let i=1; i<=12; i++) document.getElementById(`lamp-${i}`).className = 'num-lamp';
 
       showQuestion();
       
-      // 1秒ごとにカウントダウンする心臓部
       gameInterval = setInterval(() => {
         totalTime--;
         document.getElementById('timer-text').innerText = totalTime;
 
-        // 5秒ごとに自動的に次の問題へ（タイムアップ処理）
-        if (totalTime % 5 === 0 && totalTime > 0) {
+        // ★【修正】自動進行は5秒ごとの「時間切れペナルティ」の時だけ動かす
+        if (totalTime % 5 === 0) {
           if (questionResults[currentQuestionIdx] === 0) {
-            // まだ未回答なら時間切れで不正解扱い
-            recordResult(false);
-          }
-          currentQuestionIdx++;
-          if (currentQuestionIdx < 12) {
-            showQuestion();
+            recordResult(false); // 時間切れ不正解
+            goToNext();
           }
         }
 
-        // 60秒使い果たした、または12問終わったら終了
-        if (totalTime <= 0 || currentQuestionIdx >= 12) {
-          endGame();
-        }
+        if (totalTime <= 0) endGame();
       }, 1000);
     }
 
-    // クイズを表示
     function showQuestion() {
-      if (currentQuestionIdx >= 12) return;
+      if (currentQuestionIdx >= 12) {
+        endGame();
+        return;
+      }
       
       const currentQuiz = quizData[currentQuestionIdx];
       document.getElementById('quiz-question').innerText = currentQuiz.q;
       
-      // 4択ボタンのテキスト書き換え
       for (let i = 0; i < 4; i++) {
         document.getElementById(`btn${i}`).innerText = currentQuiz.c[i];
-        document.getElementById(`btn${i}`).disabled = false; // ボタン有効化
+        document.getElementById(`btn${i}`).disabled = false;
       }
 
-      // 現在の問題のランプを黄色に点滅
       const currentLamp = document.getElementById(`lamp-${currentQuestionIdx + 1}`);
       if (currentLamp) currentLamp.classList.add('current');
     }
 
-    // 回答がクリックされたとき
+    // ★【修正】回答ボタンを押した瞬間の処理
     function selectAnswer(choiceIdx) {
-      // 連続タップ防止のためにボタンを一度すべて無効化
       for (let i = 0; i < 4; i++) document.getElementById(`btn${i}`).disabled = true;
 
       const isCorrect = (choiceIdx === quizData[currentQuestionIdx].a);
       if (isCorrect) correctCount++;
       
       recordResult(isCorrect);
+
+      // ★最後の12問目を答えた瞬間に、大惨事確定なら「ボタンタップのイベント内」で即バイブを起動！
+      if (currentQuestionIdx === 11 && correctCount <= 3) {
+        triggerVibration();
+      }
+
+      // 5秒待たずに即座に次の問題へ移行！
+      setTimeout(() => {
+        goToNext();
+      }, 200); // 0.2秒だけボタンを押した手応え（一瞬）を残して次へ
     }
 
-    // 結果を記録してランプの色を確定させる
     function recordResult(isCorrect) {
       questionResults[currentQuestionIdx] = isCorrect ? 1 : -1;
       document.getElementById('correct-text').innerText = `正解: ${correctCount}/12`;
@@ -274,7 +245,29 @@
       }
     }
 
-    // ゲーム終了判定
+    // ★次の問題に進む、またはゲーム終了へ渡す関数
+    function goToNext() {
+      currentQuestionIdx++;
+      
+      // まだ問題が残っていて、かつ全体の残り時間がある場合
+      if (currentQuestionIdx < 12 && totalTime > 0) {
+        // 次の問題の開始秒数（次の5の倍数）へタイマーをジャンプ同期させる
+        totalTime = 60 - (currentQuestionIdx * 5);
+        document.getElementById('timer-text').innerText = totalTime;
+        showQuestion();
+      } else {
+        endGame();
+      }
+    }
+
+    // 物理バイブレーションを強制起動する関数
+    function triggerVibration() {
+      if (navigator.vibrate) {
+        // 激しく震えては止まる、大惨事パターン
+        navigator.vibrate([800, 100, 800, 100, 800, 100, 800]);
+      }
+    }
+
     function endGame() {
       clearInterval(gameInterval);
       
@@ -282,26 +275,19 @@
       const resTitle = document.getElementById('result-title');
       const resDesc = document.getElementById('result-desc');
 
-      // 本家リスペクト：正解数が「3問以下」ならタイムショック大惨事発動！
       if (correctCount <= 3) {
         resTitle.innerText = "💥 TIME SHOCK!!";
         resTitle.style.color = "#fff";
         resDesc.innerText = `正解数はわずか ${correctCount} 問！\n恐怖の回転ペナルティ発生！`;
-        
-        // 画面シェイク＆赤フラッシュ発動
         container.classList.add('time-shock-active');
-
-        // ★【新機能】スマホの物理バイブレーションを作動（1秒振動→0.1秒休み をループ）
-        if (navigator.vibrate) {
-          navigator.vibrate([1000, 100, 1000, 100, 1000]);
-        }
+        
+        // 5秒ペナルティ自動判定でここに来た場合（ボタンタップを挟まなかった場合）の保険
+        triggerVibration();
       } else if (correctCount === 12) {
-        // 全問正解
         resTitle.innerText = "👑 PERFECT!!";
         resTitle.style.color = "#ffc107";
         resDesc.innerText = "お見事！12問全問正解！\nあなたは真のタイムショック王です！";
       } else {
-        // 通常終了
         resTitle.innerText = "✨ CHALLENGE END";
         resTitle.style.color = "#4caf50";
         resDesc.innerText = `12問中、 ${correctCount} 問正解しました！`;
@@ -312,8 +298,8 @@
 
     function hideResult() {
       document.getElementById('result-overlay').classList.add('hidden');
-      document.getElementById('game-container').className = ''; // 特殊エフェクトクラスをリセット
-      if (navigator.vibrate) navigator.vibrate(0); // バイブが鳴ってたら止める
+      document.getElementById('game-container').className = ''; 
+      if (navigator.vibrate) navigator.vibrate(0); 
       startGame();
     }
   </script>

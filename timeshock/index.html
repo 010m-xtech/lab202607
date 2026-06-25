@@ -317,13 +317,13 @@
         document.getElementById('flash-layer').style.display = 'block'; 
         document.getElementById('crack-layer').style.display = 'block'; 
         
-        // ★【新機能】5秒後に演出を自動でストップさせて静かな結果画面にする
+        // ★【新機能】3秒後に演出を自動でストップさせて静かな結果画面にする
         shockTimeout = setTimeout(() => {
           stopShockEffects();
           resTitle.innerText = "💀 CHALLENGE FAILED";
           resTitle.style.color = "#ff8888";
           resDesc.innerText = `ペナルティ終了。\n正解数は ${correctCount} 問でした。\n次は10問正解を目指して頑張りましょう！`;
-        }, 3000); // 3000ミリ秒 = 3秒
+        }, 2000); // 2000ミリ秒 = 2秒
         
       } else if (correctCount >= 10) {
         resTitle.innerText = "👑👑 CLEAR 👑👑";

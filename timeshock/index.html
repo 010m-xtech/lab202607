@@ -88,21 +88,17 @@
     }
     .hidden { display: none !important; }
 
-    /* ─── タイムショック演出（最優先レイヤー） ─── */
-    
-    /* 画面全体を激震させるクラス（揺れ幅をさらに強化！） */
+    /* ─── タイムショック演出 ─── */
     .time-shock-shake-active { 
       animation: superShake 0.04s infinite !important; 
     }
     
-    /* 赤黒ストロボ点滅（z-indexを200にして確実に文字の上に被せる） */
     .time-shock-flash {
       position: fixed; inset: 0; z-index: 200; pointer-events: none;
       animation: strobe 0.1s infinite; display: none;
-      mix-blend-mode: multiply; /* 文字が見える状態で真っ赤に染める */
+      mix-blend-mode: multiply;
     }
     
-    /* ガラスひび割れ（z-indexを210に最優先化） */
     .crack-overlay {
       position: fixed; inset: 0; z-index: 210; pointer-events: none; display: none;
       background: 
@@ -194,6 +190,7 @@
     let totalTime = 60;
     let gameInterval = null;
     let questionResults = [];
+    let shockTimeout = null; // ★タイムショックを5秒で止めるタイマー用
 
     // 時計ランプ生成
     const dial = document.getElementById('dial');
@@ -212,7 +209,12 @@
     }
 
     function startGame() {
+      // 念のため前回のタイマーをクリア
+      if (shockTimeout) clearTimeout(shockTimeout);
+      stopShockEffects();
+
       document.getElementById('start-overlay').classList.add('hidden');
+      document.getElementById('result-overlay').classList.add('hidden');
       currentQuestionIdx = 0;
       correctCount = 0;
       totalTime = 60;
@@ -291,6 +293,13 @@
       }
     }
 
+    // ★大パニック演出を停止させる関数
+    function stopShockEffects() {
+      document.getElementById('main-body').className = ''; 
+      document.getElementById('flash-layer').style.display = 'none';
+      document.getElementById('crack-layer').style.display = 'none';
+    }
+
     function endGame() {
       clearInterval(gameInterval);
       
@@ -303,10 +312,18 @@
         resTitle.style.color = "#ff3333";
         resDesc.innerText = `正解数はわずか ${correctCount} 問！\n恐怖の回転ペナルティ発生！`;
         
-        // エラーを吐く可能性のあるバイブ命令を完全消去し、純粋なCSSアニメーションだけで大暴れさせる
+        // 演出開始！
         body.classList.add('time-shock-shake-active'); 
         document.getElementById('flash-layer').style.display = 'block'; 
         document.getElementById('crack-layer').style.display = 'block'; 
+        
+        // ★【新機能】5秒後に演出を自動でストップさせて静かな結果画面にする
+        shockTimeout = setTimeout(() => {
+          stopShockEffects();
+          resTitle.innerText = "💀 CHALLENGE FAILED";
+          resTitle.style.color = "#ff8888";
+          resDesc.innerText = `ペナルティ終了。\n正解数は ${correctCount} 問でした。\n次は10問正解を目指して頑張りましょう！`;
+        }, 5000); // 5000ミリ秒 = 5秒
         
       } else if (correctCount >= 10) {
         resTitle.innerText = "👑👑 CLEAR 👑👑";
@@ -322,12 +339,14 @@
     }
 
     function hideResult() {
+      if (shockTimeout) clearTimeout(shockTimeout);
       document.getElementById('result-overlay').classList.add('hidden');
-      document.getElementById('main-body').className = ''; 
-      document.getElementById('flash-layer').style.display = 'none';
-      document.getElementById('crack-layer').style.display = 'none';
+      stopShockEffects();
       startGame();
     }
+  </script>
+</body>
+</html>
   </script>
 </body>
 </html>

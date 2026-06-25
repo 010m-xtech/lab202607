@@ -88,12 +88,11 @@
     }
     .hidden { display: none !important; }
 
-    /* ─── ★タイムショック演出（最優先レイヤー＆周期調整） ─── */
+    /* ─── タイムショック演出（最優先レイヤー） ─── */
     .time-shock-shake-active { 
       animation: superShake 0.04s infinite !important; 
     }
     
-    /* ★ストロボの間隔を0.1秒から0.05秒に極限まで細かくし、3秒での強制停止に綺麗に追従するように修正 */
     .time-shock-flash {
       position: fixed; inset: 0; z-index: 200; pointer-events: none;
       animation: strobe 0.05s infinite; display: none;
@@ -293,7 +292,6 @@
       }
     }
 
-    // ★すべてのエフェクト（クラスやスタイル）を物理的に消し去る関数
     function stopShockEffects() {
       document.getElementById('main-body').className = ''; 
       document.getElementById('flash-layer').style.display = 'none';
@@ -301,7 +299,8 @@
     }
 
     function endGame() {
-      clearInterval(gameInterval);
+      // ★大バグ修正：何はともあれ、まずはクイズの秒読みタイマーを「即死」させて完全に止める！
+      clearInterval(gameInterval); 
       
       const body = document.getElementById('main-body');
       const resTitle = document.getElementById('result-title');
@@ -317,13 +316,13 @@
         document.getElementById('flash-layer').style.display = 'block'; 
         document.getElementById('crack-layer').style.display = 'block'; 
         
-        // ★【大修正】きっちり3秒（3000ms）でCSSアニメーションもろともすべて完全シャットダウン！
+        // ★【完全解決】他のすべての邪魔が入らない状態で、きっちり3秒（3000ms）を計測して画面をスン…と鎮静化！
         shockTimeout = setTimeout(() => {
-          stopShockEffects(); // CSSの残像をここで強制リセット
+          stopShockEffects(); 
           resTitle.innerText = "💀 CHALLENGE FAILED";
           resTitle.style.color = "#ff8888";
           resDesc.innerText = `ペナルティ終了。\n正解数は ${correctCount} 問でした。\n次は10問正解を目指して頑張りましょう！`;
-        }, 3000); // 3000ミリ秒 ＝ 完璧な3秒！
+        }, 3000); // 3000ミリ秒 ＝ 混じり気なしの「3秒間」
         
       } else if (correctCount >= 10) {
         resTitle.innerText = "👑👑 CLEAR 👑👑";

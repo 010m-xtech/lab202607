@@ -88,7 +88,7 @@
     }
     .hidden { display: none !important; }
 
-    /* ─── タイムショック演出 ─── */
+    /* ─── タイムショック演出（最優先レイヤー） ─── */
     .time-shock-shake-active { 
       animation: superShake 0.04s infinite !important; 
     }
@@ -190,7 +190,7 @@
     let totalTime = 60;
     let gameInterval = null;
     let questionResults = [];
-    let shockTimeout = null; // ★タイムショックを5秒で止めるタイマー用
+    let shockTimeout = null;
 
     // 時計ランプ生成
     const dial = document.getElementById('dial');
@@ -209,7 +209,6 @@
     }
 
     function startGame() {
-      // 念のため前回のタイマーをクリア
       if (shockTimeout) clearTimeout(shockTimeout);
       stopShockEffects();
 
@@ -293,7 +292,6 @@
       }
     }
 
-    // ★大パニック演出を停止させる関数
     function stopShockEffects() {
       document.getElementById('main-body').className = ''; 
       document.getElementById('flash-layer').style.display = 'none';
@@ -312,18 +310,18 @@
         resTitle.style.color = "#ff3333";
         resDesc.innerText = `正解数はわずか ${correctCount} 問！\n恐怖の回転ペナルティ発生！`;
         
-        // 演出開始！
+        // 演出を強制起動
         body.classList.add('time-shock-shake-active'); 
         document.getElementById('flash-layer').style.display = 'block'; 
         document.getElementById('crack-layer').style.display = 'block'; 
         
-        // ★【新機能】3秒後に演出を自動でストップさせて静かな結果画面にする
+        // ★【大修正】3秒後にJavaScriptの強制停止命令と同時にCSSの見た目も完全にシャットダウン
         shockTimeout = setTimeout(() => {
-          stopShockEffects();
+          stopShockEffects(); // ←ここでCSSの点滅や揺れを強制リセット！
           resTitle.innerText = "💀 CHALLENGE FAILED";
           resTitle.style.color = "#ff8888";
           resDesc.innerText = `ペナルティ終了。\n正解数は ${correctCount} 問でした。\n次は10問正解を目指して頑張りましょう！`;
-        }, 2000); // 2000ミリ秒 = 2秒
+        }, 3000); // 3000ミリ秒 ＝ 完璧に3秒！
         
       } else if (correctCount >= 10) {
         resTitle.innerText = "👑👑 CLEAR 👑👑";
@@ -344,9 +342,6 @@
       stopShockEffects();
       startGame();
     }
-  </script>
-</body>
-</html>
   </script>
 </body>
 </html>

@@ -28,7 +28,6 @@
             position: relative;
         }
 
-        /* 画面全体をタップ可能にするための透明なレイヤー */
         #tap-overlay {
             position: fixed;
             top: 0;
@@ -36,7 +35,7 @@
             width: 100%;
             height: 100%;
             z-index: 5;
-            display: none; /* 必要な時だけ表示 */
+            display: none;
             cursor: pointer;
         }
 
@@ -74,7 +73,7 @@
             justify-content: space-around;
             gap: 20px;
             position: relative;
-            z-index: 10; /* タップレイヤーより前に出す */
+            z-index: 10;
         }
 
         button {
@@ -98,7 +97,6 @@
             color: #fff;
         }
 
-        /* 画面下の小さなタップ促しテキスト */
         #tap-hint {
             font-size: 0.85rem;
             color: #888;
@@ -113,7 +111,6 @@
             100% { opacity: 0.3; }
         }
 
-        /* ミス時の演出 */
         .panic-animation {
             animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both, flash-red 0.4s ease-out;
         }
@@ -144,12 +141,19 @@
 </div>
 
 <script>
+    // ==========================================
+    // ⚙️ モード設定
+    // true  = テストモード（すべて「左」が正解）
+    // false = 本番モード（左右ランダム）
+    const IS_TEST_MODE = true; 
+    // ==========================================
+
     let currentStep = 0;
     let totalSteps = 5;
     let mistakes = 0;
     let maxMistakes = 3;
     let correctPath = [];
-    let nextAction = null; // 次にタップした時に実行する関数を保存する変数
+    let nextAction = null;
 
     const textArea = document.getElementById('text-area');
     const choicesContainer = document.getElementById('choices');
@@ -161,21 +165,18 @@
         document.body.style.backgroundImage = `url('${imgName}')`;
     }
 
-    // 画面タップを許可する
     function enableScreenTap(actionFunction) {
         tapOverlay.style.display = 'block';
         tapHint.style.display = 'block';
         nextAction = actionFunction;
     }
 
-    // 画面タップを禁止する（ボタン選択の時など）
     function disableScreenTap() {
         tapOverlay.style.display = 'none';
         tapHint.style.display = 'none';
         nextAction = null;
     }
 
-    // 画面がタップされたら実行
     function nextTrigger() {
         if (nextAction) {
             const action = nextAction;
@@ -184,25 +185,25 @@
         }
     }
 
-    // ゲームの初期化
     function initGame() {
         currentStep = 0;
         mistakes = 0;
         correctPath = [];
-        
-        // 5回分の正解ルートをランダム生成 (0: 左, 1: 右)
-        for (let i = 0; i < totalSteps; i++) {
-            correctPath.push(Math.floor(Math.random() * 2));
+
+        if (IS_TEST_MODE) {
+            correctPath = [0, 0, 0, 0, 0];
+        } else {
+            for (let i = 0; i < totalSteps; i++) {
+                correctPath.push(Math.floor(Math.random() * 2));
+            }
         }
 
         updateLantern();
         choicesContainer.innerHTML = '';
         
-        // 【演出】最初は road1.webp（一本道）を表示
         changeBackground('road1.webp');
         showText("あたりは暗い森の中……<br>ほんのりと灯るランタンの明かりだけが、足元の道を照らしている。<br><br>あなたは歩き始めた。");
         
-        // タップしたらV字路（road2）へ進むように設定
         enableScreenTap(showFork);
     }
 
@@ -226,46 +227,42 @@
         textArea.innerHTML = text;
     }
 
-    // V字路の提示
     function showFork() {
-        // ここで road2.webp（分かれ道）に切り替える
         changeBackground('road2.webp');
-        showText(`（サク、サク、サク……）<br><br>道が二手に分かれるV字路が現れた。<br>【第 ${currentStep + 1} の分岐点】`);
+        showText(`（サク、サク、サク……）<br><br>道が二手に分かれるV字路が現れた。`);
         
-        // 選択ボタンを表示（この間はタップで進めない）
         choicesContainer.innerHTML = `
             <button onclick="choose(0)">左の道へ</button>
             <button onclick="choose(1)">右の道へ</button>
         `;
     }
 
-    // 選択肢を選んだ時の処理
     function choose(choice) {
-        choicesContainer.innerHTML = ''; // ボタンを消す
+        choicesContainer.innerHTML = '';
+        disableScreenTap();
         
         if (choice === correctPath[currentStep]) {
-            // 正解の場合
+            // 【正解】
             currentStep++;
-            
-            // road1.webp（一本道）に戻す
             changeBackground('road1.webp');
             
             if (currentStep === totalSteps) {
                 showText("（サク、サク、サク……）<br><br>最後の角を曲がり、一本道を進んでいく。すると……");
-                enableScreenTap(showGoal);
+                setTimeout(showGoal, 3000);
             } else {
                 showText("（サク、サク……）<br><br>正しい道を進んでいるようだ。<br>背後に不穏な気配は無い。");
-                enableScreenTap(showFork); // タップしたら次のV字路へ
+                // 【変更】正解時：2.5秒（2500ms）で自動進行
+                setTimeout(showFork, 2500);
             }
         } else {
-            // 不正解の場合
+            // 【不正解（ミス）】
             mistakes++;
             triggerPanicEffects();
             updateLantern();
             
             if (mistakes >= maxMistakes) {
                 showText("（ザザッ！！！）<br><br>背後から凄まじい勢いで【何か】が迫り、あなたのランタンを吹き消した。<br><br>……ここで意識が途絶えた。");
-                enableScreenTap(showResetButton);
+                showResetButton();
             } else {
                 let warningText = "";
                 if (mistakes === 1) {
@@ -274,17 +271,17 @@
                     warningText = "（ハァ……ハァ……）<br><br>間違いない。闇の中から、あなたの耳元に向けて冷たい呼吸音が近づいてきている。次はない。";
                 }
                 showText(warningText);
-                // ミスした時も、タップしたら次のV字路（road2）を出し直す
-                enableScreenTap(showFork);
+                
+                // 【変更】ミス時：2.5秒（2500ms）で自動進行
+                setTimeout(showFork, 2500);
             }
         }
     }
 
-    // ゴール表示
     function showGoal() {
-        changeBackground('road3.webp'); // 山小屋を表示
+        changeBackground('road3.webp');
         showText("前方に、ぽつんと温かい明かりが見える。<br>山小屋だ！あなたは無事に森を抜け出した。");
-        enableScreenTap(showResetButton);
+        showResetButton();
     }
 
     function triggerPanicEffects() {

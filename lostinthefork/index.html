@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ロスト・イン・ザ・フォーク</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #020202;
+            color: #e0e0e0;
+            font-family: 'Hiragino Mincho ProN', 'Georgia', serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            transition: background-image 1s ease-in-out;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* 画面全体に薄黒いフィルターをかけて画像の雰囲気をホラー調にする */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.85));
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            padding: 20px;
+            z-index: 2;
+        }
+
+        /* ランタンのほのかな明かりの演出 */
+        #lantern {
+            width: 70px;
+            height: 70px;
+            background: radial-gradient(circle, rgba(255,170,50,0.8) 0%, rgba(0,0,0,0) 70%);
+            border-radius: 50%;
+            margin: 0 auto 40px auto;
+            box-shadow: 0 0 30px rgba(255,170,50,0.4);
+            transition: all 1s ease;
+        }
+
+        #text-area {
+            font-size: 1.15rem;
+            line-height: 1.9;
+            min-height: 150px;
+            margin-bottom: 40px;
+            letter-spacing: 0.12rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+            text-align: left;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+        }
+
+        button {
+            background-color: rgba(20, 20, 20, 0.85);
+            color: #ccc;
+            border: 1px solid #444;
+            padding: 18px 20px;
+            font-size: 1.05rem;
+            font-family: inherit;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            flex: 1;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        button:active {
+            background-color: rgba(60, 20, 20, 0.9);
+            color: #fff;
+            border-color: #888;
+        }
+
+        /* ミス時の画面の揺れと赤フラッシュ */
+        .panic-animation {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both, flash-red 0.4s ease-out;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        @keyframes flash-red {
+            0% { background-color: #020202; }
+            50% { background-color: #450000; }
+            100% { background-color: #020202; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="overlay"></div>
+
+<div id="game-container">
+    <div id="lantern"></div>
+    <div id="text-area"></div>
+    <div class="btn-container" id="choices">
+        </div>
+</div>
+
+<script>
+    // ゲームの状態管理
+    let currentStep = 0;
+    let totalSteps = 5;
+    let mistakes = 0;
+    let maxMistakes = 3;
+    let correctPath = [];
+
+    const textArea = document.getElementById('text-area');
+    const choicesContainer = document.getElementById('choices');
+    const lantern = document.getElementById('lantern');
+
+    // 背景画像を切り替える関数
+    function changeBackground(imgName) {
+        document.body.style.backgroundImage = `url('${imgName}')`;
+    }
+
+    // ゲームの初期化
+    function initGame() {
+        currentStep = 0;
+        mistakes = 0;
+        correctPath = [];
+        
+        // 5回分の正解をランダムに生成 (0: 左, 1: 右)
+        for (let i = 0; i < totalSteps; i++) {
+            correctPath.push(Math.floor(Math.random() * 2));
+        }
+
+        updateLantern();
+        changeBackground('road1.webp'); // 1本道の画像からスタート
+        
+        showText("あたりは暗い森の中……<br>ほんのりと灯るランタンの明かりだけが、足元の道を照らしている。<br><br>あなたは歩き始めた。");
+        setTimeout(showFork, 3500);
+    }
+
+    // ランタンの明かりの状態を更新
+    function updateLantern() {
+        if (mistakes === 0) {
+            lantern.style.background = "radial-gradient(circle, rgba(255,170,50,0.8) 0%, rgba(0,0,0,0) 70%)";
+            lantern.style.boxShadow = "0 0 30px rgba(255,170,50,0.4)";
+        } else if (mistakes === 1) {
+            lantern.style.background = "radial-gradient(circle, rgba(240,120,40,0.5) 0%, rgba(0,0,0,0) 65%)";
+            lantern.style.boxShadow = "0 0 20px rgba(240,120,40,0.2)";
+        } else if (mistakes === 2) {
+            lantern.style.background = "radial-gradient(circle, rgba(255,40,40,0.3) 0%, rgba(0,0,0,0) 55%)";
+            lantern.style.boxShadow = "0 0 15px rgba(255,40,40,0.1)";
+        } else {
+            lantern.style.background = "none";
+            lantern.style.boxShadow = "none";
+        }
+    }
+
+    // テキスト表示
+    function showText(text) {
+        textArea.innerHTML = text;
+    }
+
+    // V字路の提示
+    function showFork() {
+        changeBackground('road2.webp'); // 分かれ道の画像に切り替え
+        showText(`（サク、サク、サク……）<br><br>道が二手に分かれるV字路が現れた。<br>【第 ${currentStep + 1} の分岐点】`);
+        
+        choicesContainer.innerHTML = `
+            <button onclick="choose(0)">左の道へ</button>
+            <button onclick="choose(1)">右の道へ</button>
+        `;
+    }
+
+    // 選択肢を選んだ時の処理
+    function choose(choice) {
+        choicesContainer.innerHTML = ''; // ボタンを一時消去
+        
+        if (choice === correctPath[currentStep]) {
+            // 正解の場合
+            currentStep++;
+            changeBackground('road1.webp'); // 正解ルートを歩く（1本道の画像へ）
+            
+            if (currentStep === totalSteps) {
+                // 5回連続成功（ゴール）
+                changeBackground('road3.webp'); // 山小屋の画像に切り替え
+                showText("（サク、サク、サク……）<br><br>前方に、ぽつんと温かい明かりが見える。<br>山小屋だ！あなたは無事に森を抜け出した。");
+                setTimeout(showResetButton, 3000);
+            } else {
+                // 次のステップへ
+                showText("（サク、サク……）<br>正しい道を進んでいるようだ。<br>背後に不穏な気配は無い。");
+                setTimeout(showFork, 2500);
+            }
+        } else {
+            // 不正解の場合（ミス）
+            mistakes++;
+            triggerPanicEffects();
+            updateLantern();
+
+            if (mistakes >= maxMistakes) {
+                // ゲームオーバー
+                showText("（ザザッ！！！）<br><br>背後から凄まじい勢いで【何か】が迫り、あなたのランタンを吹き消した。<br><br>……ここで意識が途絶えた。");
+                setTimeout(showResetButton, 4000);
+            } else {
+                // 警告の演出
+                let warningText = "";
+                if (mistakes === 1) {
+                    warningText = "（……サク、サク……ザザッ）<br><br>道を曲がった瞬間、気のせいか、少し後ろから【別の足音】が聞こえた気がした。";
+                } else if (mistakes === 2) {
+                    warningText = "（ハァ……ハァ……）<br><br>間違いない。闇の中から、あなたの耳元に向けて冷たい呼吸音が近づいてきている。次はない。";
+                }
+                showText(warningText);
+                setTimeout(showFork, 4500);
+            }
+        }
+    }
+
+    // ミス時の演出（振動・揺れ・赤フラッシュ）
+    function triggerPanicEffects() {
+        // スマホのバイブレーション（150ms振動、100ms休憩、150ms振動）
+        if (navigator.vibrate) {
+            navigator.vibrate([150, 100, 150]);
+        }
+        
+        // 画面を揺らす＆赤くするクラスを追加
+        document.body.classList.add('panic-animation');
+        // アニメーションが終わったらクラスを削除
+        setTimeout(() => {
+            document.body.classList.remove('panic-animation');
+        }, 400);
+    }
+
+    // リトライボタンの表示
+    function showResetButton() {
+        choicesContainer.innerHTML = `<button onclick="initGame()">もう一度、森へ入る</button>`;
+    }
+
+    // 最初のアニメーション開始
+    window.onload = initGame;
+</script>
+
+</body>
+</html>

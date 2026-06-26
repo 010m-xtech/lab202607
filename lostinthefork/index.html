@@ -62,17 +62,31 @@
             font-size: 1.15rem;
             line-height: 1.9;
             min-height: 150px;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
             letter-spacing: 0.12rem;
             text-shadow: 0 2px 5px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.8);
             text-align: left;
+        }
+
+        /* 【ここを大幅修正】ボタンがあってもなくても、常に同じ高さをキープするエリア */
+        .bottom-action-area {
+            width: 100%;
+            height: 90px; /* ボタンやタップ文字が収まる高さを固定 */
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .btn-container {
             display: flex;
             justify-content: space-around;
             gap: 20px;
-            position: relative;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             z-index: 10;
         }
 
@@ -80,13 +94,15 @@
             background-color: rgba(15, 15, 15, 0.75);
             color: #ccc;
             border: 1px solid #444;
-            padding: 18px 20px;
+            padding: 0 20px; /* 上下のパディングを削り、親要素の高さに合わせる */
             font-size: 1.05rem;
             font-family: inherit;
             cursor: pointer;
             border-radius: 6px;
             transition: all 0.3s ease;
             flex: 1;
+            height: 65px; /* ボタン自体の高さを固定 */
+            align-self: center; /* 上下中央に配置 */
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
             box-shadow: 0 4px 10px rgba(0,0,0,0.6);
@@ -97,12 +113,16 @@
             color: #fff;
         }
 
+        /* 【修正】タップ促しテキストの位置をボタンと同じ中央に固定 */
         #tap-hint {
-            font-size: 0.85rem;
-            color: #888;
-            margin-top: 10px;
+            position: absolute;
+            font-size: 1.05rem;
+            color: #aaa;
+            letter-spacing: 0.1rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,1);
             animation: blink 1.5s infinite;
             display: none;
+            z-index: 4;
         }
 
         @keyframes blink {
@@ -136,8 +156,11 @@
 <div id="game-container">
     <div id="lantern"></div>
     <div id="text-area"></div>
-    <div class="btn-container" id="choices"></div>
-    <div id="tap-hint">▼ 画面をタップして進む</div>
+    
+    <div class="bottom-action-area">
+        <div class="btn-container" id="choices"></div>
+        <div id="tap-hint">▼ 画面をタップして進む</div>
+    </div>
 </div>
 
 <script>
@@ -242,7 +265,6 @@
         disableScreenTap();
         
         if (choice === correctPath[currentStep]) {
-            // 【正解】
             currentStep++;
             changeBackground('road1.webp');
             
@@ -251,11 +273,9 @@
                 setTimeout(showGoal, 3000);
             } else {
                 showText("（サク、サク……）<br><br>正しい道を進んでいるようだ。<br>背後に不穏な気配は無い。");
-                // 【変更】正解時：2.5秒（2500ms）で自動進行
                 setTimeout(showFork, 2500);
             }
         } else {
-            // 【不正解（ミス）】
             mistakes++;
             triggerPanicEffects();
             updateLantern();
@@ -272,7 +292,6 @@
                 }
                 showText(warningText);
                 
-                // 【変更】ミス時：2.5秒（2500ms）で自動進行
                 setTimeout(showFork, 2500);
             }
         }
@@ -295,7 +314,8 @@
     }
 
     function showResetButton() {
-        choicesContainer.innerHTML = `<button onclick="initGame()">もう一度、森へ入る</button>`;
+        // ボタンも固定された高さの中に綺麗に収まります
+        choicesContainer.innerHTML = `<button onclick="initGame()" style="width:100%;">もう一度、森へ入る</button>`;
     }
 
     window.onload = initGame;

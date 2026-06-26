@@ -12,7 +12,7 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #000; /* 画像がない場合の保険として真っ黒に */
+            background-color: #000;
             color: #e0e0e0;
             font-family: 'Hiragino Mincho ProN', 'Georgia', serif;
             display: flex;
@@ -21,14 +21,11 @@
             justify-content: center;
             min-height: 100vh;
             overflow: hidden;
-            
-            /* 【ここを修正】オーバーレイを削除し、画像そのものをくっきりと表示 */
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            
-            /* 画像の切り替えをスムーズにする（お好みで0.5sを0sにすれば瞬時に切り替わります） */
-            transition: background-image 0.5s ease-in-out;
+            /* 画像の切り替えをより滑らかに(1秒かけてフェードイン) */
+            transition: background-image 1s ease-in-out;
             position: relative;
         }
 
@@ -38,10 +35,9 @@
             max-width: 400px;
             text-align: center;
             padding: 20px;
-            z-index: 2; /* テキストやボタンを画像より前に出す */
+            z-index: 2;
         }
 
-        /* ランタンの明かり（お好みで削除しても画像は表示されます） */
         #lantern {
             width: 70px;
             height: 70px;
@@ -58,7 +54,6 @@
             min-height: 150px;
             margin-bottom: 40px;
             letter-spacing: 0.12rem;
-            /* 画像の上に文字が乗るため、影をつけて読みやすくする */
             text-shadow: 0 2px 5px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.8);
             text-align: left;
         }
@@ -70,8 +65,7 @@
         }
 
         button {
-            /* ボタンを少し半透明にして背景画像になじませる */
-            background-color: rgba(15, 15, 15, 0.7);
+            background-color: rgba(15, 15, 15, 0.75);
             color: #ccc;
             border: 1px solid #444;
             padding: 18px 20px;
@@ -81,7 +75,6 @@
             border-radius: 6px;
             transition: all 0.3s ease;
             flex: 1;
-            /* ガラスのようなブラー効果（対応ブラウザのみ） */
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
             box-shadow: 0 4px 10px rgba(0,0,0,0.6);
@@ -92,7 +85,7 @@
             color: #fff;
         }
 
-        /* ミス時の画面の揺れと赤フラッシュ（画像そのものを揺らします） */
+        /* ミス時の演出 */
         .panic-animation {
             animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both, flash-red 0.4s ease-out;
         }
@@ -106,22 +99,36 @@
 
         @keyframes flash-red {
             0% { background-color: rgba(255, 0, 0, 0); }
-            50% { background-color: rgba(255, 0, 0, 0.2); } /* 画像が見えなくならない程度に薄く */
+            50% { background-color: rgba(255, 0, 0, 0.2); }
             100% { background-color: rgba(255, 0, 0, 0); }
+        }
+
+        /* 開発用のテストボタン用スタイル */
+        #test-mode-btn {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.7rem;
+            padding: 5px 10px;
+            opacity: 0.3;
+            background: #333;
+            color: #fff;
+            border: none;
+            z-index: 10;
         }
     </style>
 </head>
 <body>
 
+<button id="test-mode-btn" onclick="activateTestMode()">テストモード(全正解)</button>
+
 <div id="game-container">
     <div id="lantern"></div>
     <div id="text-area"></div>
-    <div class="btn-container" id="choices">
-        </div>
+    <div class="btn-container" id="choices"></div>
 </div>
 
 <script>
-    //（※JavaScriptコードは前回と同じですが、背景切り替えのタイミングを少し調整しました）
     let currentStep = 0;
     let totalSteps = 5;
     let mistakes = 0;
@@ -133,8 +140,13 @@
     const lantern = document.getElementById('lantern');
 
     function changeBackground(imgName) {
-        // 画像をくっきりと、ダイレクトに切り替える
         document.body.style.backgroundImage = `url('${imgName}')`;
+    }
+
+    // ★テスト用：必ずクリアできるモード
+    function activateTestMode() {
+        correctPath = [0, 0, 0, 0, 0]; // すべて「左」が正解になる
+        alert("テストモード：すべて【左の道】を選べば山小屋に辿り着きます");
     }
 
     function initGame() {
@@ -145,14 +157,16 @@
             correctPath.push(Math.floor(Math.random() * 2));
         }
         updateLantern();
-        // ゲーム開始は「一本道」の画像
+        
+        // 【修正】まずは確実にroad1.webp（一本道）を表示して歩かせる
         changeBackground('road1.webp');
         showText("あたりは暗い森の中……<br>ほんのりと灯るランタンの明かりだけが、足元の道を照らしている。<br><br>あなたは歩き始めた。");
-        setTimeout(showFork, 3000);
+        
+        // 次の分かれ道が出るまでの時間を「4秒」に伸ばし、一本道をしっかり見せる
+        setTimeout(showFork, 4000);
     }
 
     function updateLantern() {
-        // ランタンの光を弱める演出（画像が暗くなるわけではありません）
         if (mistakes === 0) {
             lantern.style.background = "radial-gradient(circle, rgba(255,170,50,0.6) 0%, rgba(0,0,0,0) 70%)";
             lantern.style.boxShadow = "0 0 25px rgba(255,170,50,0.3)";
@@ -173,7 +187,7 @@
     }
 
     function showFork() {
-        // 分岐点では「分かれ道」の画像に切り替え
+        // 分岐点に到着してはじめてroad2.webp（分かれ道）に切り替える
         changeBackground('road2.webp');
         showText(`（サク、サク、サク……）<br><br>道が二手に分かれるV字路が現れた。<br>【第 ${currentStep + 1} の分岐点】`);
         choicesContainer.innerHTML = `
@@ -184,29 +198,37 @@
 
     function choose(choice) {
         choicesContainer.innerHTML = '';
+        
         if (choice === correctPath[currentStep]) {
             currentStep++;
-            // 正解ルートを歩く（「一本道」の画像に戻る）
+            
+            // 【修正】正解したらroad1.webp（一本道）に戻し、歩いている余韻を作る
             changeBackground('road1.webp');
+            
             if (currentStep === totalSteps) {
-                // 山小屋に到着（「山小屋」の画像に切り替え）
-                changeBackground('road3.webp');
-                showText("（サク、サク、サク……）<br><br>前方に、ぽつんと温かい明かりが見える。<br>山小屋だ！あなたは無事に森を抜け出した。");
-                setTimeout(showResetButton, 3000);
+                // 5回成功したら、まずは少し歩いてから山小屋を見つける演出に
+                showText("（サク、サク、サク……）<br><br>最後の角を曲がり、一本道を進んでいく。すると……");
+                
+                setTimeout(() => {
+                    changeBackground('road3.webp'); // ここで満を持して山小屋を表示！
+                    showText("前方に、ぽつんと温かい明かりが見える。<br>山小屋だ！あなたは無事に森を抜け出した。");
+                    setTimeout(showResetButton, 3000);
+                }, 3000); // 3秒後に山小屋へ
+                
             } else {
                 showText("（サク、サク……）<br>正しい道を進んでいるようだ。<br>背後に不穏な気配は無い。");
-                setTimeout(showFork, 2500);
+                // 次の分かれ道（road2）に行くまでに3.5秒の間を空ける
+                setTimeout(showFork, 3500);
             }
         } else {
             mistakes++;
             triggerPanicEffects();
             updateLantern();
+            
             if (mistakes >= maxMistakes) {
-                // ゲームオーバー（画像はそのままでランタン消灯）
                 showText("（ザザッ！！！）<br><br>背後から凄まじい勢いで【何か】が迫り、あなたのランタンを吹き消した。<br><br>……ここで意識が途絶えた。");
                 setTimeout(showResetButton, 4000);
             } else {
-                // 間違えたことを伝える（画像は「分かれ道」のまま）
                 let warningText = "";
                 if (mistakes === 1) {
                     warningText = "（……サク、サク……ザザッ）<br><br>道を曲がった瞬間、気のせいか、少し後ろから【別の足音】が聞こえた気がした。";
@@ -214,18 +236,16 @@
                     warningText = "（ハァ……ハァ……）<br><br>間違いない。闇の中から、あなたの耳元に向けて冷たい呼吸音が近づいてきている。次はない。";
                 }
                 showText(warningText);
-                // 警告を読ませた後、次の分岐（road2.webp）へ
-                setTimeout(showFork, 4000);
+                // ミスした時は、そのまま分かれ道の画像（road2）のままで次の選択へ進む
+                setTimeout(showFork, 4500);
             }
         }
     }
 
     function triggerPanicEffects() {
         if (navigator.vibrate) {
-            // スマホを振動させる
             navigator.vibrate([150, 100, 150]);
         }
-        // 背景画像ごとガタガタと揺らすクラスを追加
         document.body.classList.add('panic-animation');
         setTimeout(() => {
             document.body.classList.remove('panic-animation');

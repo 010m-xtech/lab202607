@@ -24,7 +24,7 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            transition: background-image 1.2s ease-in-out;
+            /* 背景の切り替えアニメーション（JavaScript側で制御するためCSSからは削除） */
             position: relative;
         }
 
@@ -50,7 +50,7 @@
             pointer-events: none; 
         }
 
-        /* ランタン（サイズはJavaScript側で70%基準に制御） */
+        /* ランタン（サイズは70%基準に可変制御） */
         #lantern {
             position: absolute;
             top: 50%;
@@ -143,7 +143,7 @@
             z-index: 4;
         }
 
-        /* 血しぶき演出用の画面覆いレイヤー（z-indexを背景とテキストの中間に調整） */
+        /* 血しぶき演出用の画面覆いレイヤー */
         #blood-splatter {
             position: fixed;
             top: 0;
@@ -157,7 +157,7 @@
             display: none;
         }
 
-        /* 意識が遠のく漆黒のフェードアウト用レイヤー（z-indexを背景とテキストの中間に調整） */
+        /* 意識が遠のく漆黒のフェードアウト用レイヤー */
         #black-out {
             position: fixed;
             top: 0;
@@ -235,7 +235,13 @@
     const bloodSplatter = document.getElementById('blood-splatter');
     const blackOut = document.getElementById('black-out');
 
-    function changeBackground(imgName) {
+    // 背景切り替え関数（アニメーションの有無をコントロール可能に）
+    function changeBackground(imgName, useTransition = true) {
+        if (useTransition) {
+            document.body.style.transition = "background-image 1.2s ease-in-out";
+        } else {
+            document.body.style.transition = "none";
+        }
         document.body.style.backgroundImage = `url('${imgName}')`;
     }
 
@@ -261,13 +267,12 @@
 
     // タイトル画面の表示
     function showTitleScreen() {
-        // 全演出・状態をクリア
         blackOut.className = '';
         blackOut.style.display = 'none';
         bloodSplatter.className = '';
         bloodSplatter.style.display = 'none';
         
-        changeBackground('top.webp');
+        changeBackground('top.webp', false); // 最初は瞬時に表示
         lantern.style.visibility = 'hidden';
         textArea.innerHTML = '';
         choicesContainer.innerHTML = `
@@ -277,31 +282,31 @@
         `;
     }
 
-    // スタートボタンを押した後の暗転挟み処理（一瞬のチラつきを完全に防止）
+    // スタート時の暗転（チラつきバグを完全粉砕）
     function preStartGame() {
         choicesContainer.innerHTML = '';
-        blackOut.className = ''; // クラス初期化
-        blackOut.classList.add('fade-out-animation'); // 1. top画面の上に黒シートを重ねて暗転
+        blackOut.className = ''; 
+        blackOut.classList.add('fade-out-animation'); // 1. topの上に黒シートを重ねて完全に隠す
         
         setTimeout(() => {
-            // 2. 完全に真っ黒になった状態で、裏側の背景をひっそりroad1に切り替える（ランタンはまだ隠す）
-            changeBackground('road1.webp');
+            // 2. 完全に真っ黒になったタイミングで、裏側の背景を「アニメーションなし(false)」で瞬時に切り替え
+            changeBackground('road1.webp', false); 
             lantern.style.visibility = 'hidden'; 
             
-            // 3. 裏側の準備ができたら、黒シートを剥がしていく（フェードイン）
+            // 3. 切り替えが終わったら、黒シートをゆっくり剥がしていく
             blackOut.classList.replace('fade-out-animation', 'fade-in-animation');
             
             setTimeout(() => {
                 blackOut.classList.remove('fade-in-animation');
                 blackOut.style.display = 'none';
                 
-                // 4. 画面が戻った後に、本編開始（ランタンを灯してテキストを表示）
+                // 4. 暗闇が晴れた後に本編（ランタン点灯・テキスト表示）を開始！
                 startGame();
             }, 1200);
         }, 1200);
     }
 
-    // ゲーム本編の開始（プロローグテキスト表示）
+    // ゲーム本編の開始
     function startGame() {
         currentStep = 0;
         mistakes = 0;
@@ -321,11 +326,10 @@
         updateLantern();
         showText("あたりは暗い森の中……<br>ほんのりと灯るランタンの明かりだけが、足元の道を照らしている。<br><br>あなたは歩き始めた。");
         
-        // 2.5秒後に自動進行
         setTimeout(showFork, 2500);
     }
 
-    // ランタンのサイズ制御（70%基準で3段階変化）
+    // ランタンのサイズ制御（70%基準・3段階変化）
     function updateLantern(forceHide = false) {
         if (forceHide) {
             lantern.style.visibility = 'hidden';
@@ -353,7 +357,7 @@
     }
 
     function showFork() {
-        changeBackground('road2.webp');
+        changeBackground('road2.webp', true); // 通常プレイ時はなめらかに切り替え
         updateLantern();
         showText(`（サク、サク、サク……）<br><br>道が二手に分かれるV字路が現れた。`);
         choicesContainer.innerHTML = `
@@ -367,7 +371,7 @@
         disableScreenTap();
         if (choice === correctPath[currentStep]) {
             currentStep++;
-            changeBackground('road1.webp');
+            changeBackground('road1.webp', true);
             if (currentStep === totalSteps) {
                 showText("（サク、サク、サク……）<br><br>最後の角を曲がり、一本道を進んでいく。すると……");
                 setTimeout(showGoal, 3000);
@@ -380,20 +384,18 @@
             triggerPanicEffects();
             updateLantern();
             if (mistakes >= maxMistakes) {
-                // 血しぶきと暗転シートをテキストの「裏側」で同時に動かす
+                // 【修正】3回目のミス時点で即座にランタンを消し、血しぶきと暗転を発動！
+                updateLantern(true); 
                 bloodSplatter.className = '';
                 blackOut.className = '';
                 bloodSplatter.classList.add('splatter-animation');
                 blackOut.classList.add('fade-out-animation');
                 
-                // テストエリアの文字は最前面にあるので絶対に消えずに読めます
                 showText("（ザザッ！！！）<br><br>背後から凄まじい勢いで【何か】が迫り、あなたのランタンを吹き消した。<br><br>……ここで意識が途絶えた。");
                 
-                // 8秒間じっくり読ませる
+                // 8秒間表示を固定
                 setTimeout(() => {
-                    showText(""); // 文字を消去
-                    
-                    // 演出用レイヤーを消してリトライボタンを出す
+                    showText(""); 
                     bloodSplatter.style.display = 'none';
                     blackOut.style.display = 'none';
                     showResetButton(); 
@@ -409,8 +411,8 @@
     }
 
     function showGoal() {
-        changeBackground('road3.webp');
-        updateLantern(true); // 山小屋（安全圏）に着いたのでランタンを完全に消去
+        changeBackground('road3.webp', true);
+        updateLantern(true); // 山小屋（安全圏）に着いたのでランタンを消去
         showText("前方に、ぽつんと温かい明かりが見える。<br>山小屋だ！あなたは無事に森を抜け出した。");
         showResetButton();
     }
@@ -422,7 +424,6 @@
     }
 
     function showResetButton() {
-        // リトライボタンを確実に表示
         choicesContainer.innerHTML = `<button onclick="showTitleScreen()" style="width:100%; letter-spacing:0.1rem; padding: 0 15px;">もう一度、森へ入る</button>`;
     }
 

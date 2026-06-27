@@ -50,16 +50,14 @@
             pointer-events: none; 
         }
 
-        /* 【調整】ランタンを大きく、文字の背後（z-index: -1）へ配置できるように絶対配置に変更 */
+        /* 【調整】ランタンの初期配置（サイズはJavaScript側で70%基準に可変制御します） */
         #lantern {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 500px; /* サイズを大幅に拡大 */
-            height: 500px;
             border-radius: 50%;
-            z-index: -1; /* 文字の背後に配置 */
+            z-index: -1; 
             pointer-events: none;
             transition: all 1.2s ease;
             visibility: hidden;
@@ -74,7 +72,7 @@
             text-shadow: 0 4px 8px rgba(0,0,0,1), 0 0 15px rgba(0,0,0,0.9);
             text-align: left;
             position: relative;
-            z-index: 10; /* ランタンより前に出す */
+            z-index: 10; 
         }
 
         .bottom-action-area {
@@ -153,7 +151,7 @@
             width: 100%;
             height: 100%;
             background: radial-gradient(circle, rgba(130,0,0,0.8) 0%, rgba(40,0,0,0.95) 70%, rgba(0,0,0,1) 100%);
-            z-index: 40; /* 演出時は最前面近くへ */
+            z-index: 40; 
             opacity: 0;
             pointer-events: none;
             display: none;
@@ -167,7 +165,7 @@
             width: 100%;
             height: 100%;
             background: #000;
-            z-index: 50; /* 最前面 */
+            z-index: 50; 
             opacity: 0;
             pointer-events: none;
             display: none;
@@ -185,7 +183,7 @@
 
         .fade-out-animation { 
             display: block !important; 
-            animation: dark-fade 1.2s forwards; /* 暗転用の速度 */
+            animation: dark-fade 1.2s forwards; 
         }
 
         .fade-in-animation {
@@ -220,12 +218,7 @@
 </div>
 
 <script>
-    // ==========================================
-    // ⚙️ モード設定
-    // true  = テストモード（すべて「左」が正解）
-    // false = 本番モード（左右ランダム）
     const IS_TEST_MODE = true; 
-    // ==========================================
 
     let currentStep = 0;
     let totalSteps = 5;
@@ -278,19 +271,31 @@
         `;
     }
 
-    // 【新設】スタートボタンを押した後の暗転挟み処理
+    // 【修正】演出順の組み替え：top暗転 ➡️ road1切替 ➡️ ランタン点灯
     function preStartGame() {
         choicesContainer.innerHTML = '';
         blackOut.classList.remove('fade-in-animation');
-        blackOut.classList.add('fade-out-animation'); // まず真っ黒にする
+        blackOut.classList.add('fade-out-animation'); // 1. top画面が暗転
         
-        // 1.2秒後（完全に暗転した瞬間）に背景を切り替えて本編開始
         setTimeout(() => {
-            startGame();
+            // 2. 暗闇の裏で背景をroad1（一本道）に切り替え（この時点ではまだランタンは非表示）
+            changeBackground('road1.webp');
+            lantern.style.visibility = 'hidden'; 
+            
+            // 3. 暗転シートを剥がして画面を戻す
+            blackOut.classList.replace('fade-out-animation', 'fade-in-animation');
+            
+            setTimeout(() => {
+                blackOut.classList.remove('fade-in-animation');
+                blackOut.style.display = 'none';
+                
+                // 4. 画面が戻った後に、ランタンの光を「ふっ」と出現させる！
+                startGame();
+            }, 1200);
         }, 1200);
     }
 
-    // ゲーム開始（プロローグ）
+    // ゲーム本編の開始（プロローグテキスト表示）
     function startGame() {
         currentStep = 0;
         mistakes = 0;
@@ -304,29 +309,18 @@
             }
         }
 
-        // 演出用レイヤーのリセット
         bloodSplatter.classList.remove('splatter-animation');
         bloodSplatter.style.display = 'none'; 
         
-        // 背景を一本道に変え、黒シートを徐々に剥がす（フェードイン）
-        changeBackground('road1.webp');
-        lantern.style.visibility = 'visible';
+        // ランタンを点灯してテキストを表示
         updateLantern();
-        
         showText("あたりは暗い森の中……<br>ほんのりと灯るランタンの明かりだけが、足元の道を照らしている。<br><br>あなたは歩き始めた。");
         
-        blackOut.classList.replace('fade-out-animation', 'fade-in-animation');
-        
-        setTimeout(() => {
-            blackOut.classList.remove('fade-in-animation');
-            blackOut.style.display = 'none';
-        }, 1200);
-        
-        // タップを待たずに2.5秒後に自動進行
+        // 2.5秒後に自動進行
         setTimeout(showFork, 2500);
     }
 
-    // 【調整】ランタンの3段階の変化をめちゃくちゃ分かりやすく強化
+    // 【調整】ランタンのサイズを全体的に70%に縮小し、3段階のグラデーションを再設計
     function updateLantern(forceHide = false) {
         if (forceHide) {
             lantern.style.visibility = 'hidden';
@@ -335,20 +329,20 @@
         lantern.style.visibility = 'visible';
         
         if (mistakes === 0) {
-            // 1段階目：広範囲を照らす温かい光
+            // 新1段階目：70%基準の温かい安心の光（最大約380px）
             lantern.style.background = "radial-gradient(circle, rgba(255,180,80,0.6) 0%, rgba(0,0,0,0) 80%)";
-            lantern.style.width = "550px";
-            lantern.style.height = "550px";
+            lantern.style.width = "385px";
+            lantern.style.height = "385px";
         } else if (mistakes === 1) {
-            // 2段階目：一回り小さくなり、怪しいオレンジに
-            lantern.style.background = "radial-gradient(circle, rgba(240,100,20,0.45) 0%, rgba(0,0,0,0) 70%)";
-            lantern.style.width = "380px";
-            lantern.style.height = "380px";
+            // 新2段階目：[新規作成] 1段階目と旧2段階目の完全な中間点。少し頼りない橙色の光
+            lantern.style.background = "radial-gradient(circle, rgba(245,130,30,0.5) 0%, rgba(0,0,0,0) 70%)";
+            lantern.style.width = "325px";
+            lantern.style.height = "325px";
         } else if (mistakes === 2) {
-            // 3段階目：かなり狭く、危険を知らせる血の赤色に
-            lantern.style.background = "radial-gradient(circle, rgba(200,10,10,0.3) 0%, rgba(0,0,0,0) 50%)";
-            lantern.style.width = "250px";
-            lantern.style.height = "250px";
+            // 新3段階目：[旧2段階目ベース] ギュッと狭まり、赤みが混ざった危険を知らせる灯火
+            lantern.style.background = "radial-gradient(circle, rgba(220,60,20,0.4) 0%, rgba(0,0,0,0) 65%)";
+            lantern.style.width = "266px";
+            lantern.style.height = "266px";
         }
     }
 
@@ -384,20 +378,15 @@
             triggerPanicEffects();
             updateLantern();
             if (mistakes >= maxMistakes) {
-                // 血しぶきと暗転シートを同時に動かす
                 bloodSplatter.classList.add('splatter-animation');
                 blackOut.classList.add('fade-out-animation');
                 
                 showText("（ザザッ！！！）<br><br>背後から凄まじい勢いで【何か】が迫り、あなたのランタンを吹き消した。<br><br>……ここで意識が途絶えた。");
                 
-                // 【調整】死の余韻をじっくり読めるように、猶予を「8秒（8000ms）」に延長
                 setTimeout(() => {
-                    showText(""); // 文字を消去
-                    
-                    // 次のプレイに備えて演出レイヤーを裏に隠す
+                    showText(""); 
                     bloodSplatter.style.setProperty('display', 'none', 'important'); 
                     blackOut.style.display = 'none';
-                    
                     showResetButton(); 
                 }, 8000);
             } else {
@@ -412,8 +401,8 @@
 
     function showGoal() {
         changeBackground('road3.webp');
-        updateLantern(true); // 【調整】山小屋（安全圏）に着いたのでランタンを完全に消去
-        showText("前方に、ぽつんと温かい明かり見える。<br>山小屋だ！あなたは無事に森を抜け出した。");
+        updateLantern(true); // 山小屋（安全圏）に着いたのでランタンを完全に消去
+        showText("前方に、ぽつんと温かい明かりが見える。<br>山小屋だ！あなたは無事に森を抜け出した。");
         showResetButton();
     }
 
@@ -424,7 +413,6 @@
     }
 
     function showResetButton() {
-        // 【調整】両サイドのスペースを少しスマートに詰めたリトライボタン
         choicesContainer.innerHTML = `<button onclick="showTitleScreen()" style="width:100%; letter-spacing:0.1rem; padding: 0 15px;">もう一度、森へ入る</button>`;
     }
 

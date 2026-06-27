@@ -34,7 +34,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 30; 
+            z-index: 200; 
             display: none;
             cursor: pointer;
         }
@@ -45,18 +45,18 @@
             max-width: 400px;
             text-align: center;
             padding: 20px;
-            z-index: 25; 
+            z-index: 100; /* テキストやボタンを絶対的な最前面グループへ */
             pointer-events: none; 
         }
 
-        /* ランタン */
+        /* ランタン（サイズは70%基準に可変制御） */
         #lantern {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             border-radius: 50%;
-            z-index: -1; 
+            z-index: 1; 
             pointer-events: none;
             transition: all 1.2s ease;
             visibility: hidden;
@@ -71,7 +71,7 @@
             text-shadow: 0 4px 8px rgba(0,0,0,1), 0 0 15px rgba(0,0,0,0.9);
             text-align: left;
             position: relative;
-            z-index: 26; 
+            z-index: 110; /* 血しぶき(90)や暗転(80)より絶対に前面 */
         }
 
         .bottom-action-area {
@@ -81,7 +81,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 27; 
+            z-index: 120; 
         }
 
         /* タイトル画面用のスタートボタン配置（下から1/6付近） */
@@ -90,7 +90,7 @@
             bottom: 16.6%; 
             width: 70%; 
             max-width: 240px;
-            z-index: 100;
+            z-index: 150;
         }
 
         .btn-container {
@@ -102,7 +102,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 35; 
+            z-index: 160; 
         }
 
         button {
@@ -142,21 +142,21 @@
             z-index: 4;
         }
 
-        /* 血しぶきレイヤー（暗転シートの上に表示） */
+        /* 【並び順調整】血しぶき（暗転シートの前面、テキストの背面） */
         #blood-splatter {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle, rgba(130,0,0,0.8) 0%, rgba(40,0,0,0.95) 70%, rgba(0,0,0,0) 100%);
-            z-index: 15; 
+            background: radial-gradient(circle, rgba(130,0,0,0.8) 0%, rgba(40,0,0,0.95) 70%, rgba(0,0,0,1) 100%);
+            z-index: 90; /* 暗転(80)より上、テキスト(110)より下 */
             opacity: 0;
             pointer-events: none;
             display: none;
         }
 
-        /* 漆黒の暗転シート（アニメーション終了後は真っ黒なまま固定） */
+        /* 【並び順調整】漆黒の暗転シート */
         #black-out {
             position: fixed;
             top: 0;
@@ -164,10 +164,11 @@
             width: 100%;
             height: 100%;
             background: #000;
-            z-index: 6; 
+            z-index: 80; /* 背景(1)より上で、血しぶき(90)より下 */
             opacity: 0;
             pointer-events: none;
             display: none;
+            transition: opacity 1.2s ease-in-out; /* 確実な挙動のためにCSS transitionを採用 */
         }
 
         .splatter-animation { 
@@ -178,22 +179,6 @@
         @keyframes blood-flash { 
             0% { opacity: 0; transform: scale(1.3); } 
             100% { opacity: 1; transform: scale(1.0); } 
-        }
-
-        /* 【修正】forwardsで終了時の「真っ黒（opacity: 1）」を強制キープ */
-        .fade-out-animation { 
-            display: block !important; 
-            animation: dark-fade 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; 
-        }
-
-        .fade-in-animation {
-            display: block !important;
-            animation: dark-fade 1.2s reverse forwards;
-        }
-
-        @keyframes dark-fade { 
-            0% { opacity: 0; } 
-            100% { opacity: 1; } 
         }
 
         @keyframes blink { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
@@ -266,8 +251,8 @@
 
     // タイトル画面の表示
     function showTitleScreen() {
-        blackOut.className = '';
         blackOut.style.display = 'none';
+        blackOut.style.opacity = '0';
         bloodSplatter.className = '';
         bloodSplatter.style.display = 'none';
         
@@ -284,19 +269,22 @@
     // スタート時の暗転
     function preStartGame() {
         choicesContainer.innerHTML = '';
-        blackOut.className = ''; 
-        blackOut.classList.add('fade-out-animation'); 
+        blackOut.style.display = 'block';
+        
+        // 1. 最初は確実に真っ黒にする
+        setTimeout(() => {
+            blackOut.style.opacity = '1'; 
+        }, 50);
         
         setTimeout(() => {
             changeBackground('road1.webp', false); 
             lantern.style.visibility = 'hidden'; 
             
-            blackOut.classList.replace('fade-out-animation', 'fade-in-animation');
+            // 2. 黒シートをゆっくり剥がす
+            blackOut.style.opacity = '0';
             
             setTimeout(() => {
-                blackOut.classList.remove('fade-in-animation');
                 blackOut.style.display = 'none';
-                
                 startGame();
             }, 1200);
         }, 1200);
@@ -372,7 +360,7 @@
                 showText("（サク、サク、サク……）<br><br>最後の角を曲がり、一本道を進んでいく。すると……");
                 setTimeout(showGoal, 3000);
             } else {
-                showText("（サク、サク……）<br><br>正しい道を進んでいるようだ。<br>背後に不穏な気配は無い。");
+                showText("（サク、サク……）<br><br>正しい道を進んでいるようだ。<br>背後に不穏な気配は無い. ");
                 setTimeout(showFork, 2500);
             }
         } else {
@@ -380,20 +368,27 @@
             triggerPanicEffects();
             updateLantern();
             if (mistakes >= maxMistakes) {
-                // 【修正】即座にランタン消灯、血しぶきと暗転アニメーションの完全同期発動
+                // 【超重要】即座にランタン消灯！
                 updateLantern(true); 
-                bloodSplatter.className = '';
-                blackOut.className = '';
                 
+                // 血しぶきと暗転を確実に同時作動
+                bloodSplatter.className = '';
+                bloodSplatter.style.display = 'block';
                 bloodSplatter.classList.add('splatter-animation');
-                blackOut.classList.add('fade-out-animation'); // 確実に画面全体を真っ黒に固定
+                
+                blackOut.style.display = 'block';
+                setTimeout(() => {
+                    blackOut.style.opacity = '1'; // 1.2秒かけて確実に完全な真暗闇へフェードアウト
+                }, 50);
                 
                 showText("（ザザッ！！！）<br><br>背後から凄まじい勢いで【何か】が迫り、あなたのランタンを吹き消した。<br><br>……ここで意識が途絶えた。");
                 
+                // 6秒間キープ
                 setTimeout(() => {
                     showText(""); 
                     bloodSplatter.style.display = 'none';
                     blackOut.style.display = 'none';
+                    blackOut.style.opacity = '0';
                     showResetButton(); 
                 }, 6000);
             } else {
@@ -406,12 +401,8 @@
         }
     }
 
-    // 【修正】ミリ秒単位の時間差トリックで演出順を厳密化
     function showGoal() {
-        // 1. まずランタンを完全に消去（一瞬で真っ暗に）
         updateLantern(true); 
-        
-        // 2. 0.3秒（300ミリ秒）遅らせてから、背景を山小屋に切り替える！
         setTimeout(() => {
             changeBackground('road3.webp', true);
             showText("前方に、ぽつんと温かい明かりが見える。<br>山小屋だ！あなたは無事に森を抜け出した。");

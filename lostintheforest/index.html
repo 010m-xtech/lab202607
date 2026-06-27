@@ -45,11 +45,11 @@
             max-width: 400px;
             text-align: center;
             padding: 20px;
-            z-index: 25; /* テキストやボタンを最前面グループへ */
+            z-index: 25; 
             pointer-events: none; 
         }
 
-        /* ランタン（サイズは70%基準に可変制御） */
+        /* ランタン */
         #lantern {
             position: absolute;
             top: 50%;
@@ -71,7 +71,7 @@
             text-shadow: 0 4px 8px rgba(0,0,0,1), 0 0 15px rgba(0,0,0,0.9);
             text-align: left;
             position: relative;
-            z-index: 26; /* 血しぶきや暗転シートより絶対に前に出す */
+            z-index: 26; 
         }
 
         .bottom-action-area {
@@ -81,7 +81,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 27; /* ボタンも最前面に */
+            z-index: 27; 
         }
 
         /* タイトル画面用のスタートボタン配置（下から1/6付近） */
@@ -142,21 +142,21 @@
             z-index: 4;
         }
 
-        /* 【修正】血しぶきレイヤーを暗転シート（z-index:6）の「前面」に配置！ */
+        /* 血しぶきレイヤー（暗転シートの上に表示） */
         #blood-splatter {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle, rgba(130,0,0,0.8) 0%, rgba(40,0,0,0.95) 70%, rgba(0,0,0,1) 100%);
-            z-index: 15; /* 暗転シート(6)より上で、テキスト(26)より下 */
+            background: radial-gradient(circle, rgba(130,0,0,0.8) 0%, rgba(40,0,0,0.95) 70%, rgba(0,0,0,0) 100%);
+            z-index: 15; 
             opacity: 0;
             pointer-events: none;
             display: none;
         }
 
-        /* 意識が遠のく漆黒のフェードアウト用レイヤー */
+        /* 漆黒の暗転シート（アニメーション終了後は真っ黒なまま固定） */
         #black-out {
             position: fixed;
             top: 0;
@@ -164,7 +164,7 @@
             width: 100%;
             height: 100%;
             background: #000;
-            z-index: 6; /* 背景(1)と血しぶき(15)の間に配置 */
+            z-index: 6; 
             opacity: 0;
             pointer-events: none;
             display: none;
@@ -180,9 +180,10 @@
             100% { opacity: 1; transform: scale(1.0); } 
         }
 
+        /* 【修正】forwardsで終了時の「真っ黒（opacity: 1）」を強制キープ */
         .fade-out-animation { 
             display: block !important; 
-            animation: dark-fade 1.2s forwards; 
+            animation: dark-fade 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; 
         }
 
         .fade-in-animation {
@@ -321,7 +322,6 @@
         updateLantern();
         showText("あたりは暗い森の中……<br>ほんのりと灯るランタンの明かりだけが、足元の道を照らしている。<br><br>あなたは歩き始めた。");
         
-        // 【調整】表示時間を「3500ms（＋1秒）」に延長
         setTimeout(showFork, 3500);
     }
 
@@ -380,18 +380,16 @@
             triggerPanicEffects();
             updateLantern();
             if (mistakes >= maxMistakes) {
-                // 3回目のミス時点で即座にランタンを消去
+                // 【修正】即座にランタン消灯、血しぶきと暗転アニメーションの完全同期発動
                 updateLantern(true); 
-                
-                // 血しぶき(前面)と暗転(背面)を同時に発動！
                 bloodSplatter.className = '';
                 blackOut.className = '';
+                
                 bloodSplatter.classList.add('splatter-animation');
-                blackOut.classList.add('fade-out-animation');
+                blackOut.classList.add('fade-out-animation'); // 確実に画面全体を真っ黒に固定
                 
                 showText("（ザザッ！！！）<br><br>背後から凄まじい勢いで【何か】が迫り、あなたのランタンを吹き消した。<br><br>……ここで意識が途絶えた。");
                 
-                // 【調整】メッセージ固定時間を「6000ms（ー2秒）」に短縮
                 setTimeout(() => {
                     showText(""); 
                     bloodSplatter.style.display = 'none';
@@ -408,14 +406,17 @@
         }
     }
 
+    // 【修正】ミリ秒単位の時間差トリックで演出順を厳密化
     function showGoal() {
-        // 【修正】山小屋（road3）に切り替える「前」にランタンを消去！
+        // 1. まずランタンを完全に消去（一瞬で真っ暗に）
         updateLantern(true); 
         
-        // その後、山小屋に背景を切り替える
-        changeBackground('road3.webp', true);
-        showText("前方に、ぽつんと温かい明かりが見える。<br>山小屋だ！あなたは無事に森を抜け出した。");
-        showResetButton();
+        // 2. 0.3秒（300ミリ秒）遅らせてから、背景を山小屋に切り替える！
+        setTimeout(() => {
+            changeBackground('road3.webp', true);
+            showText("前方に、ぽつんと温かい明かりが見える。<br>山小屋だ！あなたは無事に森を抜け出した。");
+            showResetButton();
+        }, 300);
     }
 
     function triggerPanicEffects() {

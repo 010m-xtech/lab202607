@@ -24,7 +24,6 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            /* 背景の切り替えアニメーション（JavaScript側で制御するためCSSからは削除） */
             position: relative;
         }
 
@@ -46,7 +45,7 @@
             max-width: 400px;
             text-align: center;
             padding: 20px;
-            z-index: 25; 
+            z-index: 25; /* テキストやボタンを最前面グループへ */
             pointer-events: none; 
         }
 
@@ -72,7 +71,7 @@
             text-shadow: 0 4px 8px rgba(0,0,0,1), 0 0 15px rgba(0,0,0,0.9);
             text-align: left;
             position: relative;
-            z-index: 10; 
+            z-index: 26; /* 血しぶきや暗転シートより絶対に前に出す */
         }
 
         .bottom-action-area {
@@ -82,7 +81,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 20;
+            z-index: 27; /* ボタンも最前面に */
         }
 
         /* タイトル画面用のスタートボタン配置（下から1/6付近） */
@@ -143,7 +142,7 @@
             z-index: 4;
         }
 
-        /* 血しぶき演出用の画面覆いレイヤー */
+        /* 【修正】血しぶきレイヤーを暗転シート（z-index:6）の「前面」に配置！ */
         #blood-splatter {
             position: fixed;
             top: 0;
@@ -151,7 +150,7 @@
             width: 100%;
             height: 100%;
             background: radial-gradient(circle, rgba(130,0,0,0.8) 0%, rgba(40,0,0,0.95) 70%, rgba(0,0,0,1) 100%);
-            z-index: 5; 
+            z-index: 15; /* 暗転シート(6)より上で、テキスト(26)より下 */
             opacity: 0;
             pointer-events: none;
             display: none;
@@ -165,7 +164,7 @@
             width: 100%;
             height: 100%;
             background: #000;
-            z-index: 6; 
+            z-index: 6; /* 背景(1)と血しぶき(15)の間に配置 */
             opacity: 0;
             pointer-events: none;
             display: none;
@@ -235,7 +234,6 @@
     const bloodSplatter = document.getElementById('blood-splatter');
     const blackOut = document.getElementById('black-out');
 
-    // 背景切り替え関数（アニメーションの有無をコントロール可能に）
     function changeBackground(imgName, useTransition = true) {
         if (useTransition) {
             document.body.style.transition = "background-image 1.2s ease-in-out";
@@ -272,7 +270,7 @@
         bloodSplatter.className = '';
         bloodSplatter.style.display = 'none';
         
-        changeBackground('top.webp', false); // 最初は瞬時に表示
+        changeBackground('top.webp', false); 
         lantern.style.visibility = 'hidden';
         textArea.innerHTML = '';
         choicesContainer.innerHTML = `
@@ -282,25 +280,22 @@
         `;
     }
 
-    // スタート時の暗転（チラつきバグを完全粉砕）
+    // スタート時の暗転
     function preStartGame() {
         choicesContainer.innerHTML = '';
         blackOut.className = ''; 
-        blackOut.classList.add('fade-out-animation'); // 1. topの上に黒シートを重ねて完全に隠す
+        blackOut.classList.add('fade-out-animation'); 
         
         setTimeout(() => {
-            // 2. 完全に真っ黒になったタイミングで、裏側の背景を「アニメーションなし(false)」で瞬時に切り替え
             changeBackground('road1.webp', false); 
             lantern.style.visibility = 'hidden'; 
             
-            // 3. 切り替えが終わったら、黒シートをゆっくり剥がしていく
             blackOut.classList.replace('fade-out-animation', 'fade-in-animation');
             
             setTimeout(() => {
                 blackOut.classList.remove('fade-in-animation');
                 blackOut.style.display = 'none';
                 
-                // 4. 暗闇が晴れた後に本編（ランタン点灯・テキスト表示）を開始！
                 startGame();
             }, 1200);
         }, 1200);
@@ -326,7 +321,8 @@
         updateLantern();
         showText("あたりは暗い森の中……<br>ほんのりと灯るランタンの明かりだけが、足元の道を照らしている。<br><br>あなたは歩き始めた。");
         
-        setTimeout(showFork, 2500);
+        // 【調整】表示時間を「3500ms（＋1秒）」に延長
+        setTimeout(showFork, 3500);
     }
 
     // ランタンのサイズ制御（70%基準・3段階変化）
@@ -357,7 +353,7 @@
     }
 
     function showFork() {
-        changeBackground('road2.webp', true); // 通常プレイ時はなめらかに切り替え
+        changeBackground('road2.webp', true); 
         updateLantern();
         showText(`（サク、サク、サク……）<br><br>道が二手に分かれるV字路が現れた。`);
         choicesContainer.innerHTML = `
@@ -384,8 +380,10 @@
             triggerPanicEffects();
             updateLantern();
             if (mistakes >= maxMistakes) {
-                // 【修正】3回目のミス時点で即座にランタンを消し、血しぶきと暗転を発動！
+                // 3回目のミス時点で即座にランタンを消去
                 updateLantern(true); 
+                
+                // 血しぶき(前面)と暗転(背面)を同時に発動！
                 bloodSplatter.className = '';
                 blackOut.className = '';
                 bloodSplatter.classList.add('splatter-animation');
@@ -393,13 +391,13 @@
                 
                 showText("（ザザッ！！！）<br><br>背後から凄まじい勢いで【何か】が迫り、あなたのランタンを吹き消した。<br><br>……ここで意識が途絶えた。");
                 
-                // 8秒間表示を固定
+                // 【調整】メッセージ固定時間を「6000ms（ー2秒）」に短縮
                 setTimeout(() => {
                     showText(""); 
                     bloodSplatter.style.display = 'none';
                     blackOut.style.display = 'none';
                     showResetButton(); 
-                }, 8000);
+                }, 6000);
             } else {
                 let warningText = mistakes === 1 ? 
                     "（……サク、サク……ザザッ）<br><br>道を曲がった瞬間、気のせいか、少し後ろから【別の足音】が聞こえた気がした。" :
@@ -411,8 +409,11 @@
     }
 
     function showGoal() {
+        // 【修正】山小屋（road3）に切り替える「前」にランタンを消去！
+        updateLantern(true); 
+        
+        // その後、山小屋に背景を切り替える
         changeBackground('road3.webp', true);
-        updateLantern(true); // 山小屋（安全圏）に着いたのでランタンを消去
         showText("前方に、ぽつんと温かい明かりが見える。<br>山小屋だ！あなたは無事に森を抜け出した。");
         showResetButton();
     }

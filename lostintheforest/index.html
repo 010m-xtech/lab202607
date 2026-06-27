@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ロスト・イン・ザ・フォーク</title>
+    <title>Lost in the Forest</title>
     <style>
         * {
             box-sizing: border-box;
@@ -24,17 +24,18 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            transition: background-image 0.8s ease-in-out;
+            transition: background-image 1.2s ease-in-out;
             position: relative;
         }
 
+        /* 画面全体のタップを検知するレイヤー */
         #tap-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 5;
+            z-index: 30; 
             display: none;
             cursor: pointer;
         }
@@ -45,7 +46,8 @@
             max-width: 400px;
             text-align: center;
             padding: 20px;
-            z-index: 2;
+            z-index: 25; 
+            pointer-events: none; 
         }
 
         #lantern {
@@ -56,6 +58,7 @@
             margin: 0 auto 40px auto;
             box-shadow: 0 0 25px rgba(255,170,50,0.3);
             transition: all 1s ease;
+            visibility: hidden;
         }
 
         #text-area {
@@ -68,14 +71,22 @@
             text-align: left;
         }
 
-        /* 【ここを大幅修正】ボタンがあってもなくても、常に同じ高さをキープするエリア */
         .bottom-action-area {
             width: 100%;
-            height: 90px; /* ボタンやタップ文字が収まる高さを固定 */
+            height: 120px; 
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        /* 【修正】タイトル画面用のスタートボタン配置（横幅をスマートに調整） */
+        .title-button-pos {
+            position: fixed;
+            bottom: 16.6%; 
+            width: 70%; /* 80%から少し小さくしてギュッと感をなくしました */
+            max-width: 240px;
+            z-index: 100;
         }
 
         .btn-container {
@@ -87,33 +98,35 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 10;
+            z-index: 35; 
         }
 
         button {
-            background-color: rgba(15, 15, 15, 0.75);
+            background-color: rgba(15, 15, 15, 0.85);
             color: #ccc;
-            border: 1px solid #444;
-            padding: 0 20px; /* 上下のパディングを削り、親要素の高さに合わせる */
-            font-size: 1.05rem;
+            border: 1px solid #555;
+            padding: 0 20px;
+            font-size: 1.1rem;
             font-family: inherit;
             cursor: pointer;
-            border-radius: 6px;
+            border-radius: 4px;
             transition: all 0.3s ease;
             flex: 1;
-            height: 65px; /* ボタン自体の高さを固定 */
-            align-self: center; /* 上下中央に配置 */
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+            height: 65px;
+            align-self: center;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+            pointer-events: auto; 
+            letter-spacing: 0.15rem;
         }
 
         button:active {
-            background-color: rgba(50, 10, 10, 0.8);
+            background-color: rgba(70, 10, 10, 0.9);
             color: #fff;
+            border-color: #aa0000;
         }
 
-        /* 【修正】タップ促しテキストの位置をボタンと同じ中央に固定 */
         #tap-hint {
             position: absolute;
             font-size: 1.05rem;
@@ -125,38 +138,70 @@
             z-index: 4;
         }
 
-        @keyframes blink {
-            0% { opacity: 0.3; }
-            50% { opacity: 1; }
-            100% { opacity: 0.3; }
+        /* 血しぶき演出用の画面覆いレイヤー */
+        #blood-splatter {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(130,0,0,0.8) 0%, rgba(40,0,0,0.95) 70%, rgba(0,0,0,0) 100%);
+            z-index: 10; 
+            opacity: 0;
+            pointer-events: none;
+            display: none;
         }
 
-        .panic-animation {
-            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both, flash-red 0.4s ease-out;
+        /* 意識が遠のく漆黒のフェードアウト用レイヤー */
+        #black-out {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 40; 
+            opacity: 0;
+            pointer-events: none;
+            display: none;
         }
 
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-3px, 0, 0); }
-            20%, 80% { transform: translate3d(5px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-7px, 0, 0); }
-            40%, 60% { transform: translate3d(7px, 0, 0); }
+        /* 【復活】血しぶきのアニメーション表示 */
+        .splatter-animation { 
+            display: block !important; 
+            animation: blood-flash 0.5s forwards; 
         }
 
-        @keyframes flash-red {
-            0% { background-color: rgba(255, 0, 0, 0); }
-            50% { background-color: rgba(255, 0, 0, 0.2); }
-            100% { background-color: rgba(255, 0, 0, 0); }
+        @keyframes blood-flash { 
+            0% { opacity: 0; transform: scale(1.2); } 
+            100% { opacity: 1; transform: scale(1.0); } 
         }
+
+        .fade-out-animation { 
+            display: block !important; 
+            animation: dark-fade 3.5s forwards; 
+        }
+
+        @keyframes dark-fade { 
+            0% { opacity: 0; } 
+            100% { opacity: 1; } 
+        }
+
+        @keyframes blink { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
+        .panic-animation { animation: shake 0.4s both, flash-red 0.4s ease-out; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-3px, 0, 0); } 20%, 80% { transform: translate3d(5px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-7px, 0, 0); } }
+        @keyframes flash-red { 0% { background-color: rgba(255, 0, 0, 0); } 50% { background-color: rgba(255, 0, 0, 0.2); } 100% { background-color: rgba(255, 0, 0, 0); } }
     </style>
 </head>
 <body>
 
 <div id="tap-overlay" onclick="nextTrigger()"></div>
+<div id="blood-splatter"></div>
+<div id="black-out"></div>
 
 <div id="game-container">
     <div id="lantern"></div>
     <div id="text-area"></div>
-    
     <div class="bottom-action-area">
         <div class="btn-container" id="choices"></div>
         <div id="tap-hint">▼ 画面をタップして進む</div>
@@ -183,6 +228,8 @@
     const lantern = document.getElementById('lantern');
     const tapOverlay = document.getElementById('tap-overlay');
     const tapHint = document.getElementById('tap-hint');
+    const bloodSplatter = document.getElementById('blood-splatter');
+    const blackOut = document.getElementById('black-out');
 
     function changeBackground(imgName) {
         document.body.style.backgroundImage = `url('${imgName}')`;
@@ -208,11 +255,25 @@
         }
     }
 
-    function initGame() {
+    // タイトル画面の表示
+    function showTitleScreen() {
+        changeBackground('top.webp');
+        lantern.style.visibility = 'hidden';
+        textArea.innerHTML = '';
+        // 【修正】両サイドに全角スペースを入れ、ギュッと感をなくしたスタートボタン
+        choicesContainer.innerHTML = `
+            <div class="title-button-pos">
+                <button onclick="startGame()"> 森に入る </button>
+            </div>
+        `;
+    }
+
+    // ゲーム開始（プロローグ）
+    function startGame() {
         currentStep = 0;
         mistakes = 0;
         correctPath = [];
-
+        
         if (IS_TEST_MODE) {
             correctPath = [0, 0, 0, 0, 0];
         } else {
@@ -221,13 +282,20 @@
             }
         }
 
-        updateLantern();
-        choicesContainer.innerHTML = '';
+        // 全演出リセット
+        bloodSplatter.classList.remove('splatter-animation');
+        bloodSplatter.style.display = 'none'; 
+        blackOut.classList.remove('fade-out-animation');
+        blackOut.style.zIndex = '40';
         
         changeBackground('road1.webp');
+        lantern.style.visibility = 'visible';
+        updateLantern();
+        choicesContainer.innerHTML = '';
         showText("あたりは暗い森の中……<br>ほんのりと灯るランタンの明かりだけが、足元の道を照らしている。<br><br>あなたは歩き始めた。");
         
-        enableScreenTap(showFork);
+        // 2.5秒後に自動進行
+        setTimeout(showFork, 2500);
     }
 
     function updateLantern() {
@@ -253,7 +321,6 @@
     function showFork() {
         changeBackground('road2.webp');
         showText(`（サク、サク、サク……）<br><br>道が二手に分かれるV字路が現れた。`);
-        
         choicesContainer.innerHTML = `
             <button onclick="choose(0)">左の道へ</button>
             <button onclick="choose(1)">右の道へ</button>
@@ -263,11 +330,9 @@
     function choose(choice) {
         choicesContainer.innerHTML = '';
         disableScreenTap();
-        
         if (choice === correctPath[currentStep]) {
             currentStep++;
             changeBackground('road1.webp');
-            
             if (currentStep === totalSteps) {
                 showText("（サク、サク、サク……）<br><br>最後の角を曲がり、一本道を進んでいく。すると……");
                 setTimeout(showGoal, 3000);
@@ -279,46 +344,52 @@
             mistakes++;
             triggerPanicEffects();
             updateLantern();
-            
             if (mistakes >= maxMistakes) {
-                showText("（ザザッ！！！）<br><br>背後から凄まじい勢いで【何か】が迫り、あなたのランタンを吹き消した。<br><br>……ここで意識が途絶えた。");
-                showResetButton();
-            } else {
-                let warningText = "";
-                if (mistakes === 1) {
-                    warningText = "（……サク、サク……ザザッ）<br><br>道を曲がった瞬間、気のせいか、少し後ろから【別の足音】が聞こえた気がした。";
-                } else if (mistakes === 2) {
-                    warningText = "（ハァ……ハァ……）<br><br>間違いない。闇の中から、あなたの耳元に向けて冷たい呼吸音が近づいてきている。次はない。";
-                }
-                showText(warningText);
+                // 血しぶき（赤）と漆黒へのフェードアウトを開始
+                bloodSplatter.classList.add('splatter-animation');
+                blackOut.classList.add('fade-out-animation');
                 
-                setTimeout(showFork, 2500);
+                showText("（ザザッ！！！）<br><br>背後から凄まじい勢いで【何か】が迫り、あなたのランタンを吹き消した。<br><br>……ここで意識が途絶えた。");
+                
+                // 3.5秒後（完全に画面が真っ黒になった瞬間）の処理
+                setTimeout(() => {
+                    showText(""); // 文字を消去
+                    
+                    // 【修正】CSSに負けないよう、クラス削除ではなく非表示命令を直接上書き
+                    bloodSplatter.style.setProperty('display', 'none', 'important'); 
+                    blackOut.style.zIndex = '-1'; // 黒シートを背景側に落とす
+                    
+                    // 【修正】タイトルに戻るのではなく「もう一度、森へ入る」に変更
+                    showResetButton(); 
+                }, 3500);
+            } else {
+                let warningText = mistakes === 1 ? 
+                    "（……サク、サク……ザザッ）<br><br>道を曲がった瞬間、気のせいか、少し後ろから【別の足音】が聞こえた気がした。" :
+                    "（ハァ……ハァ……）<br><br>間違いない。闇の中から、あなたの耳元に向けて冷たい呼吸音が近づいてきている。次はない。";
+                showText(warningText);
+                setTimeout(showFork, 3500);
             }
         }
     }
 
     function showGoal() {
         changeBackground('road3.webp');
-        showText("前方に、ぽつんと温かい明かりが見える。<br>山小屋だ！あなたは無事に森を抜け出した。");
+        showText("前方に、ぽつんと温かい明かりが見える。<br>山小屋だ！あなたは無さに森を抜け出した。");
         showResetButton();
     }
 
     function triggerPanicEffects() {
-        if (navigator.vibrate) {
-            navigator.vibrate([150, 100, 150]);
-        }
+        if (navigator.vibrate) navigator.vibrate([150, 100, 150]);
         document.body.classList.add('panic-animation');
-        setTimeout(() => {
-            document.body.classList.remove('panic-animation');
-        }, 400);
+        setTimeout(() => document.body.classList.remove('panic-animation'), 400);
     }
 
     function showResetButton() {
-        // ボタンも固定された高さの中に綺麗に収まります
-        choicesContainer.innerHTML = `<button onclick="initGame()" style="width:100%;">もう一度、森へ入る</button>`;
+        // 【修正】暗闇の中に再びゲームスタートへの切符を表示
+        choicesContainer.innerHTML = `<button onclick="startGame()" style="width:100%;">もう一度、森へ入る</button>`;
     }
 
-    window.onload = initGame;
+    window.onload = showTitleScreen;
 </script>
 
 </body>

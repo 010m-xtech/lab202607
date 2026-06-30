@@ -28,6 +28,13 @@
         .game-link-btn { display: block; width: 100%; box-sizing: border-box; text-decoration: none; padding: 12px 15px; margin-top: 8px; background: #ff9800; color: white; border-radius: 25px; font-weight: bold; font-size: 0.95em; text-align: center; transition: background 0.2s; border: none; cursor: pointer; font-family: sans-serif; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .game-link-btn:hover { background: #e65100; opacity: 0.9; }
 
+        /* ご意見・ご要望エリア用追加スタイル */
+        .feedback-block { margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 10px; text-align: left; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); }
+        .feedback-title { font-size: 1em; font-weight: bold; color: #333; }
+        .feedback-submit-btn { width: 100%; padding: 10px; margin-top: 10px; background: #4caf50; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 0.95em; }
+        .feedback-submit-btn:hover { background: #43a047; }
+        .feedback-submit-btn:disabled { background: #cccccc; cursor: not-allowed; }
+
         .notice-text { font-size: 10px; color: #777; text-align: left; margin-top: 30px; line-height: 1.4; border-top: 1px dashed #ddd; padding-top: 10px; }
         .loading-text { font-size: 1.1em; font-weight: bold; color: #ff9800; margin-top: 20px; }
     </style>
@@ -64,13 +71,13 @@
         </select>
 
         <span class="q-title">お気に入りのゲームを教えてください（ない場合は"なし"と入力）</span>
-        <textarea id="comment" placeholder="お気に入りのゲームを教えてください" required></textarea>
+        <textarea id="comment-game" placeholder="お気に入りのゲームを教えてください" required></textarea>
         
         <span class="q-title">もう一度来店したいと思った、人に紹介したいと思った飲食店とその体験を教えてください（ない場合は"なし"と入力）</span>
-        <textarea id="comment" placeholder="飲食店とそのお店での体験を教えてください" required></textarea>
+        <textarea id="comment-restaurant" placeholder="飲食店とそのお店での体験を教えてください" required></textarea>
 
         <span class="q-title">はまっていること、はまっているものを教えてください（ない場合は"なし"と入力）</span>
-        <textarea id="comment" placeholder="はまっていること、ものを教えてください" required></textarea>
+        <textarea id="comment-trend" placeholder="はまっていること、ものを教えてください" required></textarea>
         
         <button type="button" id="survey-submit-btn" class="submit-trigger-btn" onclick="submitSurveyAndShowGames()">アンケートに回答してゲームに挑戦</button>
     </div>
@@ -85,30 +92,36 @@
         <div class="category-block">
             <span class="category-title">運試し系</span>
             <button class="game-link-btn" style="background: #ffaa00;" onclick="clickGameLog('MMガチャ', 'https://010m-xtech.github.io/lab202607/sokutatunamagachamm/')">MMガチャ 何が出るかな</button>
-            <button class="game-link-btn" style="background: #ffb74d;" onclick="clickGameLog('脱出', 'https://010m-xtech.github.io/lab202607/lostintheforest/')">脱出　あなたは生還できるかな？</button>
+            <button class="game-link-btn" style="background: #ffb74d;" onclick="clickGameLog('Lost in the Forest', 'https://010m-xtech.github.io/lab202607/lostintheforest/')">Lost in the Forest 運命の分かれ道</button>
         </div>
 
         <div class="category-block">
             <span class="category-title">攻略系</span>
             <button class="game-link-btn" style="background: #e73c84;" onclick="clickGameLog('MMパズル', 'https://010m-xtech.github.io/lab202607/slidingpuzzle/')">MMパズル 何秒でクリアできる？</button>
-            <button class="game-link-btn" style="background: #f06292;" onclick="clickGameLog('寿司打ち5連', 'https://010m-xtech.github.io/minigame/sushigoren/')">寿司打ち5連 限界の記憶力に挑め！</button>
+            <button class="game-link-btn" style="background: #f06292;" onclick="clickGameLog('寿司打ち5連', 'https://010m-xtech.github.io/minigame/sushigoren/')">寿司打ち5連 限界の記憶力に挑め</button>
         </div>
 
         <div class="category-block">
             <span class="category-title">自己検証系</span>
             <button class="game-link-btn" style="background: #42a5f5;" onclick="clickGameLog('あいしょう占い', 'https://010m-xtech.github.io/minigame/aishouranai/')">あいしょう占い あの人との相性は何％?!</button>
-            <button class="game-link-btn" style="background: #1a2a6c;" onclick="clickGameLog('QUIZ タイムショック', 'https://010m-xtech.github.io/minigame/timeshock/')">QUIZ タイムショック 12問のクリアを目指せ！</button>
+            <button class="game-link-btn" style="background: #1a2a6c;" onclick="clickGameLog('QUIZ タイムショック', 'https://010m-xtech.github.io/minigame/timeshock/')">QUIZ タイムショック 12問の地獄に挑め！</button>
         </div>
 
         <div class="category-block">
             <span class="category-title">自己表現系</span>
-            <button class="game-link-btn" style="background: #00aa6e;" onclick="clickGameLog('AR撮影', 'https://010m-xtech.github.io/lab202607/photo/')">AR撮影 トラックを持ち上げろ</button>
+            <button class="game-link-btn" style="background: #00aa6e;" onclick="clickGameLog('LIFT THE TRUCK', 'https://010m-xtech.github.io/lab202607/photo/')">AR撮影 トラックを持ち上げろ</button>
         </div>
 
         <div class="category-block">
             <span class="category-title">探索系</span>
             <button class="game-link-btn" style="background: #7e57c2;" onclick="clickGameLog('まちがい探し', 'https://010m-xtech.github.io/lab202607/machigaisagasimm/')">まちがい探し どこが違うか見つけられるかな</button>
             <button class="game-link-btn" style="background: #9575cd;" onclick="clickGameLog('アハ体験', 'https://010m-xtech.github.io/lab202607/iwakan_sagasite2/')">アハ体験 変化に気づけるか？！</button>
+        </div>
+
+        <div class="feedback-block">
+            <span class="feedback-title">ご意見・ご要望があれば聞かせてください</span>
+            <textarea id="feedback-text" placeholder="サービスへのご意見や、追加してほしいゲームなどがあればご自由に入力してください"></textarea>
+            <button type="button" id="feedback-submit-btn" class="feedback-submit-btn" onclick="submitFeedback()">送信する</button>
         </div>
     </div>
 
@@ -146,9 +159,11 @@
         const gender = document.getElementById('gender').value;
         const age = document.getElementById('age').value;
         const guests = document.getElementById('guests').value;
-        const comment = document.getElementById('comment').value.trim();
+        const commentGame = document.getElementById('comment-game').value.trim();
+        const commentRestaurant = document.getElementById('comment-restaurant').value.trim();
+        const commentTrend = document.getElementById('comment-trend').value.trim();
 
-        if (!gender || !age || !guests || !comment) {
+        if (!gender || !age || !guests || !commentGame || !commentRestaurant || !commentTrend) {
             alert("未入力の項目があります。すべてのアンケートにお答えください。");
             return;
         }
@@ -161,7 +176,9 @@
             gender: gender,   
             age: age,   
             guests: guests,   
-            comment: comment,
+            commentGame: commentGame,
+            commentRestaurant: commentRestaurant,
+            commentTrend: commentTrend,
             deviceId: deviceId 
         };
         
@@ -181,6 +198,42 @@
     async function clickGameLog(gameName, targetUrl) {
         await sendStepLog(`②ゲーム選択(${gameName})`); 
         window.location.href = targetUrl;
+    }
+
+    // ─── 【新規追加】ご意見・ご要望を送信するJavaScript関数 ───
+    async function submitFeedback() {
+        const feedbackText = document.getElementById('feedback-text').value.trim();
+
+        if (!feedbackText) {
+            alert("ご意見・ご要望が入力されていません。");
+            return;
+        }
+
+        const btn = document.getElementById('feedback-submit-btn');
+        btn.disabled = true;
+        btn.innerText = "送信中...";
+
+        const feedbackData = {
+            type: "feedback", // GAS側で判別するためのタイプ名
+            feedback: feedbackText,
+            deviceId: deviceId
+        };
+
+        try {
+            await fetch(GAS_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify(feedbackData)
+            });
+            alert("ご意見ありがとうございました！");
+            document.getElementById('feedback-text').value = ""; // 入力欄をクリア
+        } catch (e) {
+            console.error(e);
+            alert("送信に失敗しました。時間をおいて再度お試しください。");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "送信する";
+        }
     }
 </script>
 </body>

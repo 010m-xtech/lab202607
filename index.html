@@ -40,7 +40,7 @@
 
 <div class="container">
     <div id="survey-fields-container">
-        <h2>調査にご協力お願いします</h2>
+        <h2>クロステクノ推進室から<br>アンケートご協力のお願い</h2>
 
         <span class="q-title">1. あなたの性別を教えてください</span>
         <select id="gender" required>
@@ -67,7 +67,10 @@
             <option value="3人以上">3人以上</option>
         </select>
 
-        <span class="q-title">お気に入りのゲームを教えてください<br><small>（ない場合は"なし"と入力）</small></span>
+        <span class="q-title">これまでに訪れた飲食店で「これは面白い」「楽しかった」と思った体験やエピソードがあれば教えてください<br><small>（ない場合は"なし"と入力）</small></span>
+        <textarea id="comment" placeholder="お気に入りのゲームを教えてください" required></textarea>
+        
+        <span class="q-title">こんな体験ができる飲食店があったら面白い！どんな体験？<br>あなたのアイデアがあれば聞かせてください<br><small>（ない場合は"なし"と入力）</small></span>
         <textarea id="comment" placeholder="お気に入りのゲームを教えてください" required></textarea>
         
         <button type="button" id="survey-submit-btn" class="submit-trigger-btn" onclick="submitSurveyAndShowGames()">アンケートに回答してゲームに挑戦</button>

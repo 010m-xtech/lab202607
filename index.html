@@ -71,9 +71,9 @@
         <textarea id="comment1" placeholder="嬉しかったサービスや驚きの演出など" required></textarea>
         
         <span class="q-title">こんな体験ができる飲食店があったら面白い！どんな体験？<br>あなたのアイデアがあれば聞かせてください<br><small>（ない場合は"なし"と入力）</small></span>
-        <textarea id="comment2" placeholder="飲食店にあったらいいなと思うアイデアなど" required></textarea>
+        <textarea id="comment2" placeholder="未来の飲食店にあったらいいなと思うアイデアなど" required></textarea>
         
-        <button type="button" id="survey-submit-btn" class="submit-trigger-btn" onclick="submitSurveyAndShowGames()">アンケートに回答してゲームに挑戦</button>
+        <button type="button" id="survey-submit-btn" class="submit-trigger-btn" onclick="submitSurveyAndShowGames(event)">アンケートに回答してゲームに挑戦</button>
     </div>
 
     <div id="loading-container" class="hidden">
@@ -119,8 +119,7 @@
 </div>
 
 <script>
-    // ★【重要】GASで「新しいデプロイ」を行った最新のURLをここに貼り付けてください
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxvBG6UwuT0ecB7YcUeBt_8bI41UJPF24xLxh2IJdEwJOdTrfEMv9p0f0fCM6OfMMtF/exec"; 
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxa3Y61z_dks6dCq2m6tyuvHovWDhZwvjyDJ8o_ZVkdY4XX3fJ7BBMjV66FyyQoblQO/exec"; 
 
     let deviceId = ""; 
 
@@ -134,6 +133,7 @@
         } catch (e) { console.error(e); }
     }
 
+    // 最初にURLを開いたときだけ、これが1回だけ実行されます
     window.onload = () => {
         let savedId = localStorage.getItem('beer_app_device_id');
         if (!savedId) {
@@ -144,25 +144,25 @@
         sendStepLog("①URLアクセス");
     };
 
-    async function submitSurveyAndShowGames() {
+    // ★【修正】引数に event を追加
+    async function submitSurveyAndShowGames(event) {
+        // ★【最重要】エラーで画面が勝手に再読み込み（リフレッシュ）する挙動をここでガチッとブロック！
+        if (event) event.preventDefault();
+
         const gender = document.getElementById('gender').value;
         const age = document.getElementById('age').value;
         const guests = document.getElementById('guests').value;
-        
-        // ★2つの入力欄からそれぞれのテキストを取得するように変更
         const comment1 = document.getElementById('comment1').value.trim();
         const comment2 = document.getElementById('comment2').value.trim();
 
-        // 必須入力チェック（comment1 と comment2 の両方を見ます）
         if (!gender || !age || !guests || !comment1 || !comment2) {
             alert("未入力の項目があります。すべてのアンケートにお答えください。");
-            return;
+            return; // ここで止まっても、画面がリロードされないのでURLアクセスログは増えません！
         }
 
         document.getElementById('survey-submit-btn').disabled = true;
         document.getElementById('loading-container').classList.remove('hidden');
 
-        // ★GASへ2つの回答データを送るオブジェクト構成に修正
         const surveyData = {
             type: "survey", 
             gender: gender,   

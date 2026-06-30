@@ -144,9 +144,7 @@
         sendStepLog("①URLアクセス");
     };
 
-    // ★【修正】引数に event を追加
     async function submitSurveyAndShowGames(event) {
-        // ★【最重要】エラーで画面が勝手に再読み込み（リフレッシュ）する挙動をここでガチッとブロック！
         if (event) event.preventDefault();
 
         const gender = document.getElementById('gender').value;
@@ -157,11 +155,11 @@
 
         if (!gender || !age || !guests || !comment1 || !comment2) {
             alert("未入力の項目があります。すべてのアンケートにお答えください。");
-            return; // ここで止まっても、画面がリロードされないのでURLアクセスログは増えません！
+            return; 
         }
 
+        // ボタンの2重連打を防止
         document.getElementById('survey-submit-btn').disabled = true;
-        document.getElementById('loading-container').classList.remove('hidden');
 
         const surveyData = {
             type: "survey", 
@@ -173,16 +171,16 @@
             deviceId: deviceId 
         };
         
-        try {
-            await fetch(GAS_URL, { 
-                method: "POST", 
-                mode: "no-cors", 
-                body: JSON.stringify(surveyData) 
-            });
-        } catch (e) { console.error(e); }
+        // ★【ここが超高速化の肝！】
+        // await を削除し、送信処理のバックグラウンド開始だけを命令して、返事を待たずに次へ進む
+        fetch(GAS_URL, { 
+            method: "POST", 
+            mode: "no-cors", 
+            body: JSON.stringify(surveyData) 
+        }).catch(e => console.error(e)); // エラーが起きても裏でログに出すだけ
 
+        // ★待たせるローディングを挟まず、0.1秒で即座にゲーム一覧を表示！
         document.getElementById('survey-fields-container').classList.add('hidden');
-        document.getElementById('loading-container').classList.add('hidden');
         document.getElementById('game-list-container').classList.remove('hidden');
     }
 

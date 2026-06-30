@@ -8,7 +8,11 @@
         body { font-family: sans-serif; background: #fff8e1; text-align: center; padding: 20px; color: #333; }
         .container { background: white; padding: 20px; border-radius: 15px; max-width: 450px; margin: 0 auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .hidden { display: none !important; }
-        .q-title { font-weight: bold; margin-top: 20px; display: block; text-align: left; }
+        
+        /* 質問タイトルのスタイル（改行時の行間と2行目の調整） */
+        .q-title { font-weight: bold; margin-top: 20px; display: block; text-align: left; line-height: 1.4; }
+        .q-title small { font-size: 0.85em; color: #666; font-weight: normal; }
+
         label { display: block; text-align: left; margin: 8px 0; cursor: pointer; }
         textarea, select, input[type="number"] { width: 100%; box-sizing: border-box; padding: 10px; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; background-color: #fff; }
         textarea { height: 60px; }
@@ -20,7 +24,7 @@
         .submit-trigger-btn { width: 100%; padding: 15px; margin-top: 30px; background: #ffc107; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 1.1em; color: #333; box-shadow: 0 3px 6px rgba(0,0,0,0.1); }
         .submit-trigger-btn:hover { background: #ffb300; }
         
-        /* ─── ゲーム選択画面用の新しいスタイル ─── */
+        /* ジャンル別ゲーム選択画面のスタイル */
         .category-block { margin-top: 25px; text-align: left; border-bottom: 1px solid #eee; padding-bottom: 15px; }
         .category-title { font-size: 1.1em; font-weight: bold; color: #555; position: relative; padding-left: 10px; margin-bottom: 10px; display: block; }
         .category-title::before { content: ""; position: absolute; left: 0; top: 2px; bottom: 2px; width: 4px; background: #ff9800; border-radius: 2px; }
@@ -36,7 +40,7 @@
 
 <div class="container">
     <div id="survey-fields-container">
-        <h2>調査にご協力お願いします</h2>
+        <h2>ゲームのニーズ調査に<br>ご協力お願いします</h2>
 
         <span class="q-title">1. あなたの性別を教えてください</span>
         <select id="gender" required>
@@ -63,14 +67,8 @@
             <option value="3人以上">3人以上</option>
         </select>
 
-        <span class="q-title">お気に入りのゲームを教えてください（ない場合は"なし"と入力）</span>
-        <textarea id="comment-game" placeholder="お気に入りのゲームを教えてください" required></textarea>
-        
-        <span class="q-title">もう一度来店したいと思った、人に紹介したいと思った飲食店とその体験を教えてください（ない場合は"なし"と入力）</span>
-        <textarea id="comment-restaurant" placeholder="飲食店とそのお店での体験を教えてください" required></textarea>
-
-        <span class="q-title">はまっていること、はまっているものを教えてください（ない場合は"なし"と入力）</span>
-        <textarea id="comment-trend" placeholder="はまっていること、ものを教えてください" required></textarea>
+        <span class="q-title">お気に入りのゲームを教えてください<br><small>（ない場合は"なし"と入力）</small></span>
+        <textarea id="comment" placeholder="お気に入りのゲームを教えてください" required></textarea>
         
         <button type="button" id="survey-submit-btn" class="submit-trigger-btn" onclick="submitSurveyAndShowGames()">アンケートに回答してゲームに挑戦</button>
     </div>
@@ -84,31 +82,32 @@
         
         <div class="category-block">
             <span class="category-title">運試し系</span>
-            <button class="game-link-btn" style="background: #ffaa00;" onclick="clickGameLog('MMガチャ', 'https://010m-xtech.github.io/lab202607/sokutatunamagachamm/')">MMガチャ 何が出るかな</button>
-            <button class="game-link-btn" style="background: #ffb74d;" onclick="clickGameLog('脱出', 'https://010m-xtech.github.io/lab202607/lostintheforest/')">脱出　あなたは生還できるかな？</button>
+            <button class="game-link-btn" style="background: #ffaa00;" onclick="clickGameLog('MMガチャ', 'https://010m-xtech.github.io/minigame/aishouranai/')">MMガチャ 何が出るかな</button>
+            <button class="game-link-btn" style="background: #ffb74d;" onclick="clickGameLog('おみくじ', 'https://010m-xtech.github.io/minigame/aishouranai/')">おみくじ 今日の運勢は？</button>
         </div>
 
         <div class="category-block">
             <span class="category-title">攻略系</span>
             <button class="game-link-btn" style="background: #e73c84;" onclick="clickGameLog('MMパズル', 'https://010m-xtech.github.io/lab202607/slidingpuzzle/')">MMパズル 何秒でクリアできる？</button>
-            <button class="game-link-btn" style="background: #f06292;" onclick="clickGameLog('寿司打ち5連', 'https://010m-xtech.github.io/minigame/sushigoren/')">寿司打ち5連 限界の記憶力に挑め</button>
+            <button class="game-link-btn" style="background: #f06292;" onclick="clickGameLog('寿司打ち5連', 'https://010m-xtech.github.io/minigame/aishouranai/')">寿司打ち5連 タイピングに挑戦</button>
         </div>
 
         <div class="category-block">
             <span class="category-title">自己検証系</span>
             <button class="game-link-btn" style="background: #42a5f5;" onclick="clickGameLog('あいしょう占い', 'https://010m-xtech.github.io/minigame/aishouranai/')">あいしょう占い あの人との相性は何％?!</button>
-            <button class="game-link-btn" style="background: #1a2a6c;" onclick="clickGameLog('クイズ', 'https://010m-xtech.github.io/minigame/timeshock/')">QUIZ タイムショック 全問正解に挑戦！</button>
+            <button class="game-link-btn" style="background: #1a2a6c;" onclick="clickGameLog('QUIZ タイムショック', 'https://010m-xtech.github.io/minigame/timeshock/')">QUIZ タイムショック 12問の地獄に挑め！</button>
         </div>
 
         <div class="category-block">
             <span class="category-title">自己表現系</span>
-            <button class="game-link-btn" style="background: #00aa6e;" onclick="clickGameLog('AR撮影', 'https://010m-xtech.github.io/lab202607/photo/')">AR撮影 トラックを持ち上げろ</button>
+            <button class="game-link-btn" style="background: #00aa6e;" onclick="clickGameLog('AR撮影', 'https://010m-xtech.github.io/minigame/aishouranai/')">AR撮影 トラックを持ち上げろ</button>
+            <button class="game-link-btn" style="background: #4db6ac;" onclick="clickGameLog('晩御飯の勧め', 'https://010m-xtech.github.io/minigame/aishouranai/')">晩御飯の勧め 今日のおかずを提案！</button>
         </div>
 
         <div class="category-block">
             <span class="category-title">探索系</span>
-            <button class="game-link-btn" style="background: #7e57c2;" onclick="clickGameLog('まちがい探し', 'https://010m-xtech.github.io/lab202607/machigaisagasimm/')">まちがい探し どこが違うか見つけられるかな</button>
-            <button class="game-link-btn" style="background: #9575cd;" onclick="clickGameLog('アハ体験', 'https://010m-xtech.github.io/lab202607/iwakan_sagasite2/')">アハ体験 変化に気づけるか？！</button>
+            <button class="game-link-btn" style="background: #7e57c2;" onclick="clickGameLog('まちがい探し', 'https://010m-xtech.github.io/minigame/aishouranai/')">まちがい探し どこが違うか見つけられるかな</button>
+            <button class="game-link-btn" style="background: #9575cd;" onclick="clickGameLog('アハ体験', 'https://010m-xtech.github.io/minigame/aishouranai/')">アハ体験 変化に気づけるか？！</button>
         </div>
     </div>
 
@@ -118,7 +117,8 @@
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycby5xb-swFtvk8ZYJ2yyDrugvGwG-fuBkaVw0PvLl3NVnNpYSCbX0W52RetnGD5WYAkb/exec"; 
+    // ★【重要】GASで「新しいデプロイ」を行った最新のURLをここに貼り付けてください
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxu3L57d4yrM1Slz9IhxXfLfCrnMw-vc1f3I_KVc19527c6cxiGczUusYz8crvhR8jy/exec"; 
 
     let deviceId = ""; 
 
@@ -146,14 +146,9 @@
         const gender = document.getElementById('gender').value;
         const age = document.getElementById('age').value;
         const guests = document.getElementById('guests').value;
-        
-        // 3つのテキストエリアから個別に値を取得
-        const commentGame = document.getElementById('comment-game').value.trim();
-        const commentRestaurant = document.getElementById('comment-restaurant').value.trim();
-        const commentTrend = document.getElementById('comment-trend').value.trim();
+        const comment = document.getElementById('comment').value.trim();
 
-        // 未入力チェック（すべての項目が入力されているか）
-        if (!gender || !age || !guests || !commentGame || !commentRestaurant || !commentTrend) {
+        if (!gender || !age || !guests || !comment) {
             alert("未入力の項目があります。すべてのアンケートにお答えください。");
             return;
         }
@@ -161,15 +156,12 @@
         document.getElementById('survey-submit-btn').disabled = true;
         document.getElementById('loading-container').classList.remove('hidden');
 
-        // GASへ送信するオブジェクト（プロパティ名を分かりやすく分割）
         const surveyData = {
             type: "survey", 
             gender: gender,   
             age: age,   
             guests: guests,   
-            commentGame: commentGame,
-            commentRestaurant: commentRestaurant,
-            commentTrend: commentTrend,
+            comment: comment,
             deviceId: deviceId 
         };
         
@@ -187,7 +179,6 @@
     }
 
     async function clickGameLog(gameName, targetUrl) {
-        // await を挟むことで、ログ送信（非同期）の完了、あるいは一定の処理時間を確保してから遷移させます
         await sendStepLog(`②ゲーム選択(${gameName})`); 
         window.location.href = targetUrl;
     }

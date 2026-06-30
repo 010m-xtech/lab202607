@@ -9,7 +9,7 @@
         .container { background: white; padding: 20px; border-radius: 15px; max-width: 450px; margin: 0 auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .hidden { display: none !important; }
         
-        /* 質問タイトルのスタイル（改行時の行間と2行目の調整） */
+        /* 質問タイトルのスタイル */
         .q-title { font-weight: bold; margin-top: 20px; display: block; text-align: left; line-height: 1.4; }
         .q-title small { font-size: 0.85em; color: #666; font-weight: normal; }
 
@@ -68,10 +68,10 @@
         </select>
 
         <span class="q-title">これまでに訪れた飲食店で「これは面白い」「楽しかった」と思った体験やエピソードがあれば教えてください<br><small>（ない場合は"なし"と入力）</small></span>
-        <textarea id="comment" placeholder="お気に入りのゲームを教えてください" required></textarea>
+        <textarea id="comment1" placeholder="嬉しかったサービスや驚きの演出など" required></textarea>
         
         <span class="q-title">こんな体験ができる飲食店があったら面白い！どんな体験？<br>あなたのアイデアがあれば聞かせてください<br><small>（ない場合は"なし"と入力）</small></span>
-        <textarea id="comment" placeholder="お気に入りのゲームを教えてください" required></textarea>
+        <textarea id="comment2" placeholder="未来の飲食店にあったらいいなと思うアイデアなど" required></textarea>
         
         <button type="button" id="survey-submit-btn" class="submit-trigger-btn" onclick="submitSurveyAndShowGames()">アンケートに回答してゲームに挑戦</button>
     </div>
@@ -86,7 +86,7 @@
         <div class="category-block">
             <span class="category-title">運試し系</span>
             <button class="game-link-btn" style="background: #ffaa00;" onclick="clickGameLog('ガチャ', 'https://010m-xtech.github.io/lab202607/sokutatunamagachamm/')">ガチャ 何が出るかな</button>
-            <button class="game-link-btn" style="background: #ffb74d;" onclick="clickGameLog('脱出', 'https://010m-xtech.github.io/lab202607/lostintheforest/')">脱出　あなたは生還できるかな？</button>
+            <button class="game-link-btn" style="background: #ffb74d;" onclick="clickGameLog('脱出', 'https://010m-xtech.github.io/lab202607/lostintheforest/')">脱出 あなたは生還できるかな？</button>
         </div>
 
         <div class="category-block">
@@ -120,7 +120,7 @@
 
 <script>
     // ★【重要】GASで「新しいデプロイ」を行った最新のURLをここに貼り付けてください
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxa3Y61z_dks6dCq2m6tyuvHovWDhZwvjyDJ8o_ZVkdY4XX3fJ7BBMjV66FyyQoblQO/exec"; 
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxvBG6UwuT0ecB7YcUeBt_8bI41UJPF24xLxh2IJdEwJOdTrfEMv9p0f0fCM6OfMMtF/exec"; 
 
     let deviceId = ""; 
 
@@ -148,9 +148,13 @@
         const gender = document.getElementById('gender').value;
         const age = document.getElementById('age').value;
         const guests = document.getElementById('guests').value;
-        const comment = document.getElementById('comment').value.trim();
+        
+        // ★2つの入力欄からそれぞれのテキストを取得するように変更
+        const comment1 = document.getElementById('comment1').value.trim();
+        const comment2 = document.getElementById('comment2').value.trim();
 
-        if (!gender || !age || !guests || !comment) {
+        // 必須入力チェック（comment1 と comment2 の両方を見ます）
+        if (!gender || !age || !guests || !comment1 || !comment2) {
             alert("未入力の項目があります。すべてのアンケートにお答えください。");
             return;
         }
@@ -158,12 +162,14 @@
         document.getElementById('survey-submit-btn').disabled = true;
         document.getElementById('loading-container').classList.remove('hidden');
 
+        // ★GASへ2つの回答データを送るオブジェクト構成に修正
         const surveyData = {
             type: "survey", 
             gender: gender,   
             age: age,   
             guests: guests,   
-            comment: comment,
+            comment1: comment1,
+            comment2: comment2,
             deviceId: deviceId 
         };
         

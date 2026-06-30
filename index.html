@@ -144,44 +144,38 @@
         sendStepLog("①URLアクセス");
     };
 
-    async function submitSurveyAndShowGames(event) {
+    function submitSurveyAndShowGames(event) {
         if (event) event.preventDefault();
 
+        // 1. ボタンが押されたら、まずは何よりも最優先で画面を「一瞬」で切り替える！
+        document.getElementById('survey-fields-container').classList.add('hidden');
+        document.getElementById('game-list-container').classList.remove('hidden');
+
+        // 2. 画面が切り替わった「裏側」で、のんびりデータを取得する
         const gender = document.getElementById('gender').value;
         const age = document.getElementById('age').value;
         const guests = document.getElementById('guests').value;
-        const comment1 = document.getElementById('comment1').value.trim();
-        const comment2 = document.getElementById('comment2').value.trim();
+        const comment1 = document.getElementById('comment1').value;
+        const comment2 = document.getElementById('comment2').value;
 
-        if (!gender || !age || !guests || !comment1 || !comment2) {
-            alert("未入力の項目があります。すべてのアンケートにお答えください。");
-            return; 
-        }
-
-        // ボタンの2重連打を防止
-        document.getElementById('survey-submit-btn').disabled = true;
-
+        // ※ 必須入力チェック（alert）があると、画面が切り替わった後にポップアップが出て使いづらくなるため、
+        //  「未入力なら自動的に『未記入』という文字にしてGASに送る」という親切設計に変換します。
         const surveyData = {
             type: "survey", 
-            gender: gender,   
-            age: age,   
-            guests: guests,   
-            comment1: comment1,
-            comment2: comment2,
+            gender: gender || "未選択",   
+            age: age || "未選択",   
+            guests: guests || "未選択",   
+            comment1: comment1.trim() || "未記入",
+            comment2: comment2.trim() || "未記入",
             deviceId: deviceId 
         };
         
-        // ★【ここが超高速化の肝！】
-        // await を削除し、送信処理のバックグラウンド開始だけを命令して、返事を待たずに次へ進む
+        // 3. バックグラウンドで完全に無言でGASへデータを送信（ユーザーはもうゲームを選べます）
         fetch(GAS_URL, { 
             method: "POST", 
             mode: "no-cors", 
             body: JSON.stringify(surveyData) 
-        }).catch(e => console.error(e)); // エラーが起きても裏でログに出すだけ
-
-        // ★待たせるローディングを挟まず、0.1秒で即座にゲーム一覧を表示！
-        document.getElementById('survey-fields-container').classList.add('hidden');
-        document.getElementById('game-list-container').classList.remove('hidden');
+        }).catch(e => console.error(e));
     }
 
     async function clickGameLog(gameName, targetUrl) {

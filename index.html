@@ -125,12 +125,14 @@
 
     let deviceId = ""; 
 
-    // ★【大改善】通信完了を「待たない」投げっぱなし高速ログ関数に変更
+    // ★iPhone（iOS）の強制切断を回避する修正版
     function sendStepLog(stepName) {
         fetch(GAS_URL, {
             method: "POST",
             mode: "no-cors",
-            body: JSON.stringify({ type: "log", step: stepName, deviceId: deviceId })
+            body: JSON.stringify({ type: "log", step: stepName, deviceId: deviceId }),
+            // ★【最重要】ページが移動しても、この通信だけはバックグラウンドで最後まで送り届ける命令
+            keepalive: true 
         }).catch(e => console.error(e));
     }
 

@@ -145,35 +145,38 @@
     function submitSurveyAndShowGames(event) {
         if (event) event.preventDefault();
 
-        // 1. 【最優先】まずは入力された値をすべて取得する
+        // 1. まずは入力された値をすべて取得する
         const gender = document.getElementById('gender').value;
         const age = document.getElementById('age').value;
         const guests = document.getElementById('guests').value;
-        const comment1 = document.getElementById('comment1').value.trim();
-        const comment2 = document.getElementById('comment2').value.trim();
+        const comment1 = document.getElementById('comment1').value;
+        const comment2 = document.getElementById('comment2').value;
 
-        // 2. 【エラーチェック復活】未入力が1つでもあれば、ここで処理をストップして警告を出す！
-        if (!gender || !age || !guests || !comment1 || !comment2) {
-            alert("未入力の項目があります。すべてのアンケートにお答えください。");
-            return; // 画面の切り替えも送信もせず、ここで完全に処理を終了します
+        // 2. 【条件変更】性別、年代、人数のみ必須チェック！記述項目は空っぽでも通します
+        if (!gender || !age || !guests) {
+            alert("未入力の項目があります。選択項目（性別・年代・人数）にすべてお答えください。");
+            return; // 必須項目が欠けていればここでストップ
         }
 
-        // 3. すべて入力されていることが確認できたら、一瞬で画面を切り替える！
+        // 3. チェックを通過したら、一瞬で画面を切り替える（爆速テンポを維持）
         document.getElementById('survey-fields-container').classList.add('hidden');
         document.getElementById('game-list-container').classList.remove('hidden');
 
-        // 4. ストレートにデータをまとめる
+        // 4. データ整形（記述が空っぽ、または空白だけの場合は「特になし」に自動補完）
+        const c1Cleaned = comment1.trim();
+        const c2Cleaned = comment2.trim();
+
         const surveyData = {
             type: "survey", 
             gender: gender,   
             age: age,   
             guests: guests,   
-            comment1: comment1,
-            comment2: comment2,
+            comment1: c1Cleaned !== "" ? c1Cleaned : "未回答",
+            comment2: c2Cleaned !== "" ? c2Cleaned : "未回答",
             deviceId: deviceId 
         };
         
-        // 5. バックグラウンドでGASへ完全に無言で送信
+        // 5. バックグラウンドでGASへ送信
         fetch(GAS_URL, { 
             method: "POST", 
             mode: "no-cors", 

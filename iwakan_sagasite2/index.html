@@ -261,7 +261,7 @@
             padding: 14px;
             border-radius: 10px;
             font-size: 12px;
-            color: var(--color-text-sub);
+            color: var(--color-accent);
             line-height: 1.6;
             text-align: center;
             transition: all 0.3s ease;
@@ -346,7 +346,7 @@
             box-shadow: none;
         }
 
-        /* スタート画面 & 全問クリア画面の共通レイアウト */
+        /* スタート画面 の共通レイアウト */
         .overlay-screen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -361,7 +361,6 @@
         }
         .overlay-screen.show { opacity: 1; pointer-events: auto; }
         
-        /* 枠の幅は元のまま（340px） */
         .overlay-box {
             background: var(--color-card);
             border: 1px solid var(--color-border);
@@ -373,7 +372,6 @@
             box-shadow: 0 25px 50px rgba(0,0,0,0.6);
         }
         
-        /* 改行タグ（br）以外での自動折り返しを一切禁止し、画面幅に合わせて文字を縮める設定 */
         .overlay-box h2 { 
             font-size: clamp(10px, 4vw, 15px); 
             font-weight: 300; 
@@ -381,7 +379,7 @@
             margin-bottom: 24px; 
             letter-spacing: 0.05em; 
             line-height: 1.6; 
-            white-space: nowrap; /* 必須：意図しない改行を防ぐ */
+            white-space: nowrap; 
         }
     </style>
 </head>
@@ -390,7 +388,7 @@
     <div class="overlay-screen show" id="startOverlay">
         <div class="overlay-box">
             <h2>画面の一部がゆっくりと変化していきます。<br>変化している箇所をタップしてください。</h2>
-            <button class="next-btn" onclick="startGame()">調査を開始する</button>
+            <button class="next-btn" onclick="startGame()">開始する</button>
         </div>
     </div>
 
@@ -444,13 +442,6 @@
                 </div>
             </footer>
 
-        </div>
-    </div>
-
-    <div class="overlay-screen" id="endOverlay">
-        <div class="overlay-box">
-            <h2>全問調査完了</h2>
-            <button class="next-btn" onclick="location.reload()">最初からもう一度</button>
         </div>
     </div>
 
@@ -512,7 +503,8 @@
             
             document.getElementById('resultPanel').style.display = 'none';
             document.getElementById('guideText').style.display = 'block';
-            document.getElementById('guideText').style.color = 'var(--color-text-sub)';
+            
+            document.getElementById('guideText').style.color = 'var(--color-accent)';
             document.getElementById('guideText').style.borderColor = 'var(--color-border)';
             document.getElementById('guideText').innerHTML = "画像の一部がゆっくりと変化します。<br>変化している部分をタップしてください。";
 
@@ -702,7 +694,13 @@
                 hasInteractedWithSlider = true;
                 const nextBtn = document.getElementById('nextStageBtn');
                 nextBtn.disabled = false;
-                nextBtn.innerText = "次の調査へ進む";
+                
+                // 問題の進行状況に応じてボタンのテキストを変更
+                if (currentIdx < dataset.length - 1) {
+                    nextBtn.innerText = "次の問題に進む";
+                } else {
+                    nextBtn.innerText = "最初からもう一度";
+                }
             }
         }
 
@@ -713,7 +711,8 @@
             if (currentIdx < dataset.length) {
                 initializeStage(currentIdx);
             } else {
-                document.getElementById('endOverlay').classList.add('show');
+                // 最後の問題をクリアしたらページをリロードして最初から開始
+                location.reload();
             }
         }
 

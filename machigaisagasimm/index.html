@@ -18,6 +18,8 @@
       top: 0;
       left: 0;
       z-index: 1 !important;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
     }
     #ui-layer {
       position: absolute;
@@ -78,7 +80,8 @@
         "result.clear": "素晴らしい！全部見つけれたね！！",
         "result.timeup": "タイムアップ！残念、、、\n答え合わせはボタンをクリック！",
         "ui.retry": "もういちど",
-        "ui.answer": "答え合わせ"
+        "ui.answer": "答え合わせ",
+        "ui.touch_here": "下の写真の間違いと思う箇所をタッチしてね"
       },
       "en": {
         "ui.start": "Start",
@@ -87,7 +90,8 @@
         "hud.found": "Found: {found} / {total}",
         "result.clear": "All Found!",
         "result.timeup": "Time's up!\n(Ask staff for the answers♪)",
-        "ui.retry": "Retry"
+        "ui.retry": "Retry",
+        "ui.touch_here": "↓ Tap the bottom photo ↓"
       },
       "zh": {
         "ui.start": "开始",
@@ -96,7 +100,8 @@
         "hud.found": "找到: {found} / {total}",
         "result.clear": "全部找到！",
         "result.timeup": "时间到！\n（请向工作人员确认答案♪）",
-        "ui.retry": "重试"
+        "ui.retry": "重试",
+        "ui.touch_here": "↓ 请点击下方照片 ↓"
       },
       "ko": {
         "ui.start": "시작",
@@ -105,7 +110,8 @@
         "hud.found": "찾았다: {found} / {total}",
         "result.clear": "모두 찾음!",
         "result.timeup": "시간 종료!\n(정답은 직원에게 확인해 주세요♪)",
-        "ui.retry": "다시하기"
+        "ui.retry": "다시하기",
+        "ui.touch_here": "↓ 아래 사진을 터치하세요 ↓"
       },
       "es": {
         "ui.start": "Empezar",
@@ -114,7 +120,8 @@
         "hud.found": "Encontrado: {found} / {total}",
         "result.clear": "¡Todos encontrados!",
         "result.timeup": "¡Se acabó el tempo!\n(¡Pregunta al personal para las respuestas♪)",
-        "ui.retry": "Reintentar"
+        "ui.retry": "Reintentar",
+        "ui.touch_here": "↓ Toca la foto de abajo ↓"
       },
       "pt": {
         "ui.start": "Começar",
@@ -124,7 +131,8 @@
         "result.clear": "Todos Encontrados!",
         "result.timeup": "Tempo esgotado!\n(Pergunte à equipe pelas respostas♪)",
         "ui.retry": "Tentar novamente",
-        "ui.answer": "Answer"
+        "ui.answer": "Answer",
+        "ui.touch_here": "↓ Toque na foto de baixo ↓"
       }
     }
   }
@@ -236,6 +244,45 @@
         canvas.parent('game-container');
         p.imageMode(p.CENTER);
 
+        // タッチやクリックの感度を良くするため、直接キャンバスにpointerdownイベントを設定
+        canvas.elt.addEventListener('pointerdown', (e) => {
+          if (gameState !== 'PLAYING') return;
+
+          // キャンバス上の正確な座標を取得
+          const rect = canvas.elt.getBoundingClientRect();
+          const mx = e.clientX - rect.left;
+          const my = e.clientY - rect.top;
+
+          let box2 = { x: 0, y: p.windowHeight / 2, w: p.windowWidth, h: p.windowHeight / 2 };
+          let bounds2 = calculateImageBounds(img2, box2.x, box2.y, box2.w, box2.h);
+          
+          if (!bounds2) return;
+
+          // 下の画像内がタッチされたか
+          if (mx >= bounds2.x && mx <= bounds2.x + bounds2.w &&
+              my >= bounds2.y && my <= bounds2.y + bounds2.h) {
+              
+              // 正解の判定
+              for (let i = 0; i < differences.length; i++) {
+                if (foundDiffs[i]) continue; // すでに見つけている場合はスキップ
+                let diff = differences[i];
+                
+                // 画面上のピクセル座標に変換して距離を測る
+                let targetX = bounds2.x + diff.x * bounds2.w;
+                let targetY = bounds2.y + diff.y * bounds2.h;
+                let targetR = diff.r * Math.max(bounds2.w, bounds2.h);
+
+                if (p.dist(mx, my, targetX, targetY) <= targetR) {
+                  foundDiffs[i] = true;
+                  updateUI();
+                  audio.playCorrect(); // ピロン♪と鳴らす
+                  checkClear(); // 全部見つけたかチェック
+                  break; 
+                }
+              }
+          }
+        });
+
         document.getElementById('start-instruction').innerText = t('ui.instruction');
         document.getElementById('start-sub-instruction').innerText = t('ui.sub_instruction');
         document.getElementById('start-btn').innerText = t('ui.start');
@@ -304,40 +351,6 @@
         return { x: drawX, y: drawY, w: drawW, h: drawH };
       }
 
-      // タッチ（クリック）したときの判定
-      p.mousePressed = () => {
-        if (gameState !== 'PLAYING') return;
-
-        let box2 = { x: 0, y: p.windowHeight / 2, w: p.windowWidth, h: p.windowHeight / 2 };
-        let bounds2 = calculateImageBounds(img2, box2.x, box2.y, box2.w, box2.h);
-        
-        if (!bounds2) return;
-
-        // 下の画像内がタッチされたか
-        if (p.mouseX >= bounds2.x && p.mouseX <= bounds2.x + bounds2.w &&
-            p.mouseY >= bounds2.y && p.mouseY <= bounds2.y + bounds2.h) {
-            
-            // 正解の判定
-            for (let i = 0; i < differences.length; i++) {
-              if (foundDiffs[i]) continue; // すでに見つけている場合はスキップ
-              let diff = differences[i];
-              
-              // 画面上のピクセル座標に変換して距離を測る
-              let targetX = bounds2.x + diff.x * bounds2.w;
-              let targetY = bounds2.y + diff.y * bounds2.h;
-              let targetR = diff.r * Math.max(bounds2.w, bounds2.h);
-
-              if (p.dist(p.mouseX, p.mouseY, targetX, targetY) <= targetR) {
-                foundDiffs[i] = true;
-                updateUI();
-                audio.playCorrect(); // ピロン♪と鳴らす
-                checkClear(); // 全部見つけたかチェック
-                break; 
-              }
-            }
-        }
-      };
-
       p.draw = () => {
         p.background(10);
 
@@ -391,6 +404,30 @@
         p.stroke(40);
         p.strokeWeight(4);
         p.line(0, p.windowHeight / 2, p.windowWidth, p.windowHeight / 2);
+
+        // 誘導テキストの表示
+        if (gameState === 'PLAYING') {
+          p.push();
+          p.translate(p.windowWidth / 2, p.windowHeight / 2 + 55);
+          
+          let msg = t('ui.touch_here') || '下の写真の間違いと思う箇所をタッチしてね';
+          p.textSize(16);
+          p.textStyle(p.BOLD);
+          let tw = p.textWidth(msg);
+          
+          // 座布団（背景の黒帯）
+          p.fill(0, 0, 0, 150);
+          p.noStroke();
+          p.rectMode(p.CENTER);
+          p.rect(0, 0, tw + 40, 36, 18);
+
+          // 点滅するテキスト（黄色）
+          let alpha = 150 + 105 * Math.sin(p.millis() / 200);
+          p.fill(255, 255, 0, alpha); 
+          p.textAlign(p.CENTER, p.CENTER);
+          p.text(msg, 0, 2);
+          p.pop();
+        }
 
         // タイマー処理と描画
         if (gameState === 'PLAYING') {

@@ -145,29 +145,30 @@
     function submitSurveyAndShowGames(event) {
         if (event) event.preventDefault();
 
-        // 1. 何よりも最優先で画面を一瞬で切り替える
-        document.getElementById('survey-fields-container').classList.add('hidden');
-        document.getElementById('game-list-container').classList.remove('hidden');
-
-        // 2. 裏でデータを取得
+        // 1. 画面が隠れる前に、最優先で全ての入力文字を確実に変数へ避難！
         const gender = document.getElementById('gender').value;
         const age = document.getElementById('age').value;
         const guests = document.getElementById('guests').value;
         const comment1 = document.getElementById('comment1').value;
         const comment2 = document.getElementById('comment2').value;
 
-        // 未入力チェックの代わりに「未入力文言」で補完（画面フリーズ対策）
+        // 2. 文字を確保し終えたら、一瞬で画面を切り替える（爆速テンポを維持）
+        document.getElementById('survey-fields-container').classList.add('hidden');
+        document.getElementById('game-list-container').classList.remove('hidden');
+
+        // 3. 【大修正】バグの原因だった「|| "未記入"」を完全に排除！
+        // 入力された文字をそのままストレートにGASへ送信する安全な形に直しました。
         const surveyData = {
             type: "survey", 
-            gender: gender || "未選択",   
-            age: age || "未選択",   
-            guests: guests || "未選択",   
-            comment1: comment1.trim() || "未記入",
-            comment2: comment2.trim() || "未記入",
+            gender: gender,   
+            age: age,   
+            guests: guests,   
+            comment1: comment1.trim(),
+            comment2: comment2.trim(),
             deviceId: deviceId 
         };
         
-        // 3. バックグラウンドでGASへ送信（返事は一切待たない）
+        // 4. バックグラウンドでGASへ完全に無言で送信（返事は一切待ちません）
         fetch(GAS_URL, { 
             method: "POST", 
             mode: "no-cors", 

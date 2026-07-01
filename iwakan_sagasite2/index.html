@@ -284,7 +284,7 @@
             border: 1px solid var(--color-border);
             padding: 14px;
             border-radius: 10px;
-            font-size: 16px; 
+            font-size: 14px;
             color: var(--color-accent);
             line-height: 1.6;
             text-align: center;
@@ -308,10 +308,10 @@
         }
 
         .review-title {
-            font-size: 14px; /* 14pxへ変更 */
+            font-size: 12px; /* 12pxに変更 */
             color: var(--color-accent);
             text-transform: uppercase;
-            letter-spacing: 0.05em; /* 文字が長くなったため少し間隔を縮めました */
+            letter-spacing: 0.05em;
             margin-bottom: 2px;
             text-align: center;
         }
@@ -364,7 +364,7 @@
         
         .next-btn:disabled {
             background: #1e293b !important;
-            color: #475569 !important;
+            color: var(--color-accent) !important;
             border: 1px solid #334155 !important;
             cursor: not-allowed;
             box-shadow: none;
@@ -450,7 +450,7 @@
 
             <footer>
                 <div class="info-textbox" id="guideText">
-                    画像の一部がゆっくりと変化します。<br>変化している部分をタップしてください。
+                    画面の一部がゆっくりと変化します。<br>変化している部分をタップしてください。
                 </div>
 
                 <div class="result-panel" id="resultPanel">
@@ -536,7 +536,7 @@
             
             document.getElementById('guideText').style.color = 'var(--color-accent)';
             document.getElementById('guideText').style.borderColor = 'var(--color-border)';
-            document.getElementById('guideText').innerHTML = "画像の一部がゆっくりと変化します。<br>変化している部分をタップしてください。";
+            document.getElementById('guideText').innerHTML = "画面の一部がゆっくりと変化します。<br>変化している部分をタップしてください。";
 
             const data = dataset[index];
             const baseImg = document.getElementById('baseImage');

@@ -284,7 +284,7 @@
             border: 1px solid var(--color-border);
             padding: 14px;
             border-radius: 10px;
-            font-size: 16px; /* 14pxから16pxへ1段階大きく変更 */
+            font-size: 16px; 
             color: var(--color-accent);
             line-height: 1.6;
             text-align: center;
@@ -308,10 +308,10 @@
         }
 
         .review-title {
-            font-size: 13px;
+            font-size: 14px; /* 14pxへ変更 */
             color: var(--color-accent);
             text-transform: uppercase;
-            letter-spacing: 0.2em;
+            letter-spacing: 0.05em; /* 文字が長くなったため少し間隔を縮めました */
             margin-bottom: 2px;
             text-align: center;
         }
@@ -338,8 +338,8 @@
         .range-labels {
             display: flex;
             justify-content: space-between;
-            font-size: 12px;
-            color: #4b5563;
+            font-size: 14px; 
+            color: var(--color-accent); 
         }
 
         .action-area {
@@ -455,7 +455,7 @@
 
                 <div class="result-panel" id="resultPanel">
                     <div>
-                        <div class="review-title">タイムラプス検証</div>
+                        <div class="review-title">バーを左右に動かして見比べてみてください</div>
                         <input type="range" min="0" max="100" value="100" class="timelapse-range" id="timelapseRange" oninput="processTimelapse(this.value)">
                         <div class="range-labels">
                             <span>変化前</span>

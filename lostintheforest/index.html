@@ -47,6 +47,13 @@
             padding: 20px;
             z-index: 100; /* テキストやボタンを絶対的な最前面グループへ */
             pointer-events: none; 
+            
+            /* 上下中央に綺麗に並べるための設定を追加 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
         }
 
         /* ランタン（サイズは70%基準に可変制御 ＋ 常に微かに揺らめくアニメーションを追加） */
@@ -81,6 +88,7 @@
             text-align: left;
             position: relative;
             z-index: 110; /* 血しぶき(90)や暗転(95)より絶対に前面 */
+            width: 100%;
         }
 
         .bottom-action-area {
@@ -93,13 +101,12 @@
             z-index: 120; 
         }
 
-        /* タイトル画面用のスタートボタン配置（下から1/6付近） */
+        /* 【変更】タイトル画面用のスタートボタン配置（中央寄せ・幅を調整可能に） */
         .title-button-pos {
-            position: fixed;
-            bottom: 16.6%; 
             width: 70%; 
             max-width: 240px;
             z-index: 150;
+            margin: 0 auto;
         }
 
         .btn-container {
@@ -195,16 +202,17 @@
         @keyframes shake { 10%, 90% { transform: translate3d(-3px, 0, 0); } 20%, 80% { transform: translate3d(5px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-7px, 0, 0); } }
         @keyframes flash-red { 0% { background-color: rgba(255, 0, 0, 0); } 50% { background-color: rgba(255, 0, 0, 0.2); } 100% { background-color: rgba(255, 0, 0, 0); } }
 
-        /* --- 修正箇所(1/3): CSSに赤文字用のクラスを追加 --- */
+        /* --- 【変更】説明文のスタイル（白文字・シャドウ強調・配置調整） --- */
         .title-description {
-            color: #aa0000; /* 雰囲気のある暗めの赤 */
-            text-align: center; /* 中央寄せ */
-            font-size: 1.0rem;
+            color: #ffffff; /* 読みやすい白文字に変更 */
+            text-align: center;
+            font-size: 0.95rem;
             line-height: 1.8;
-            margin-top: 50vh; /* 画面の中央付近から表示 */
-            text-shadow: 0 0 10px rgba(170, 0, 0, 0.5); /* ぼんやり光らせる */
+            letter-spacing: 0.08rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.8); /* 黒い影を強くして文字をクッキリ浮き立たせる */
+            margin-top: 10px;
+            width: 100%;
         }
-        /* ---------------------------------------------------- */
     </style>
 </head>
 <body>
@@ -214,13 +222,13 @@
 <div id="black-out"></div>
 
 <div id="game-container">
-    <div id="title-text-area" class="title-description"></div>
     <div id="lantern"></div>
     <div id="text-area"></div>
     <div class="bottom-action-area">
         <div class="btn-container" id="choices"></div>
         <div id="tap-hint">▼ 画面をタップして進む</div>
     </div>
+    <div id="title-text-area" class="title-description"></div>
 </div>
 
 <script>
@@ -238,7 +246,6 @@
     let audioCtx = null;
     let bgmInterval = null;
     let currentNoteIndex = 0;
-    // 不協和音を含む呪いのメルヘンメロディ（Hz）
     const spookyMelody = [440, 466, 554, 523, 440, 466, 349, 329, 440, 554, 659, 622, 440, 392, 349, 311];
 
     const textArea = document.getElementById('text-area');
@@ -248,10 +255,8 @@
     const tapHint = document.getElementById('tap-hint');
     const bloodSplatter = document.getElementById('blood-splatter');
     const blackOut = document.getElementById('black-out');
-    // 新しく追加したタイトルテキストエリア
     const titleTextArea = document.getElementById('title-text-area');
 
-    // --- Web Audio API によるシンセサイザーBGMシステム ---
     function initAudio() {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -262,8 +267,7 @@
         stopMusic();
         initAudio();
         
-        // ミスに応じてテンポ（演奏間隔）を速くする
-        let intervalTime = 500; // 初期値（0ミス）
+        let intervalTime = 500;
         if (mistakes === 1) intervalTime = 380;
         if (mistakes === 2) intervalTime = 260;
 
@@ -272,16 +276,13 @@
 
             let freq = spookyMelody[currentNoteIndex];
             
-            // オシレーター（発振器）でオルゴール調の金属音を作る
             let osc = audioCtx.createOscillator();
             let gainNode = audioCtx.createGain();
             
-            // サイン波と三角波を混ぜるニュアンスに近いカコカコした金属音を設定
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
             
-            // 不協和音の余韻を「遠くから聞こえる」ように少し長めに残す
-            gainNode.gain.setValueAtTime(0.06, audioCtx.currentTime); // 音量は控えめ
+            gainNode.gain.setValueAtTime(0.06, audioCtx.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.2);
             
             osc.connect(gainNode);
@@ -300,7 +301,6 @@
             bgmInterval = null;
         }
     }
-    // --------------------------------------------------
 
     function changeBackground(imgName, useTransition = true) {
         if (useTransition) {
@@ -332,7 +332,7 @@
     }
 
     function showTitleScreen() {
-        stopMusic(); // タイトルに戻ったら音を止める
+        stopMusic();
         blackOut.style.display = 'none';
         blackOut.style.opacity = '0';
         bloodSplatter.className = '';
@@ -343,15 +343,15 @@
         lantern.style.visibility = 'hidden';
         textArea.innerHTML = '';
 
-        // --- 修正箇所(3/3): JSでタイトル画面表示時に赤文字を挿入 ---
-        titleTextArea.style.display = 'block'; // 表示する
+        // 【変更】白文字に変更し、文章テキストを挿入
+        titleTextArea.style.display = 'block';
         titleTextArea.innerHTML = `
             あなたは森に迷い込んでしまった...<br>
             正しい道を${totalSteps}回選択し進めれば脱出成功。<br>
             もし、${maxMistakes}回誤った道を進んでしまうと...
         `;
-        // --------------------------------------------------------
 
+        // 【変更】固定配置用のクラスから、ゲーム画面内と統一感を持たせた配置に変更
         choicesContainer.innerHTML = `
             <div class="title-button-pos">
                 <button onclick="preStartGame()"> 森に入る </button>
@@ -360,11 +360,9 @@
     }
 
     function preStartGame() {
-        // ゲーム開始時はタイトル説明文を消す
         titleTextArea.style.display = 'none';
         titleTextArea.innerHTML = '';
 
-        // ブラウザのセキュリティ対策として、ボタンを押した最初のこの瞬間にオーディオを有効化
         initAudio();
         if (audioCtx && audioCtx.state === 'suspended') {
             audioCtx.resume();
@@ -405,7 +403,7 @@
         bloodSplatter.style.opacity = '1';
         
         updateLantern();
-        playMusic(); // 森を歩き始めたので、呪いのオルゴールBGM開始！
+        playMusic();
 
         showText("あたりは暗い森の中……<br>ほんのりと灯るランタンの明かりだけが、足元の道を照らしている。<br><br>あなたは歩き始めた。", () => {
             setTimeout(showFork, 1500);
@@ -492,14 +490,12 @@
             mistakes++;
             triggerPanicEffects();
             
-            // テンポ変化を反映させるためにBGMを再始動
             if (mistakes < maxMistakes) {
                 playMusic();
             }
             
             updateLantern();
             if (mistakes >= maxMistakes) {
-                // 【演出変更】意識が途絶える激しい瞬間にあわせて、まず音楽をピタッと止める（音の消失＝死の予兆）
                 stopMusic();
                 updateLantern(true); 
                 
@@ -542,13 +538,12 @@
     }
 
     function showGoal() {
-        // 【演出変更】山小屋を視認する直前、ランタン消灯と同時にオルゴールも完全停止させて究極の「無音の静寂」を作る
         stopMusic();
         updateLantern(true); 
         
         setTimeout(() => {
             changeBackground('road3.webp', true);
-            showText("前方に、ぽつんと温かい明かりが見える。<br>山小屋だ！あなたは無事に森を抜け出した。", () => {
+            showText("前方に、ぽつんと温かい明かり見える。<br>山小屋だ！あなたは無事に森を抜け出した。", () => {
                 showResetButton();
             });
         }, 800); 

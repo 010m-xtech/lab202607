@@ -194,6 +194,17 @@
         .panic-animation { animation: shake 0.4s both, flash-red 0.4s ease-out; }
         @keyframes shake { 10%, 90% { transform: translate3d(-3px, 0, 0); } 20%, 80% { transform: translate3d(5px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-7px, 0, 0); } }
         @keyframes flash-red { 0% { background-color: rgba(255, 0, 0, 0); } 50% { background-color: rgba(255, 0, 0, 0.2); } 100% { background-color: rgba(255, 0, 0, 0); } }
+
+        /* --- 修正箇所(1/3): CSSに赤文字用のクラスを追加 --- */
+        .title-description {
+            color: #aa0000; /* 雰囲気のある暗めの赤 */
+            text-align: center; /* 中央寄せ */
+            font-size: 1.0rem;
+            line-height: 1.8;
+            margin-top: 50vh; /* 画面の中央付近から表示 */
+            text-shadow: 0 0 10px rgba(170, 0, 0, 0.5); /* ぼんやり光らせる */
+        }
+        /* ---------------------------------------------------- */
     </style>
 </head>
 <body>
@@ -203,6 +214,7 @@
 <div id="black-out"></div>
 
 <div id="game-container">
+    <div id="title-text-area" class="title-description"></div>
     <div id="lantern"></div>
     <div id="text-area"></div>
     <div class="bottom-action-area">
@@ -236,6 +248,8 @@
     const tapHint = document.getElementById('tap-hint');
     const bloodSplatter = document.getElementById('blood-splatter');
     const blackOut = document.getElementById('black-out');
+    // 新しく追加したタイトルテキストエリア
+    const titleTextArea = document.getElementById('title-text-area');
 
     // --- Web Audio API によるシンセサイザーBGMシステム ---
     function initAudio() {
@@ -328,6 +342,16 @@
         changeBackground('top.webp', false); 
         lantern.style.visibility = 'hidden';
         textArea.innerHTML = '';
+
+        // --- 修正箇所(3/3): JSでタイトル画面表示時に赤文字を挿入 ---
+        titleTextArea.style.display = 'block'; // 表示する
+        titleTextArea.innerHTML = `
+            あなたは森に迷い込んでしまった...<br>
+            正しい道を${totalSteps}回選択し進めれば脱出成功。<br>
+            もし、${maxMistakes}回誤った道を進んでしまうと...
+        `;
+        // --------------------------------------------------------
+
         choicesContainer.innerHTML = `
             <div class="title-button-pos">
                 <button onclick="preStartGame()"> 森に入る </button>
@@ -336,6 +360,10 @@
     }
 
     function preStartGame() {
+        // ゲーム開始時はタイトル説明文を消す
+        titleTextArea.style.display = 'none';
+        titleTextArea.innerHTML = '';
+
         // ブラウザのセキュリティ対策として、ボタンを押した最初のこの瞬間にオーディオを有効化
         initAudio();
         if (audioCtx && audioCtx.state === 'suspended') {

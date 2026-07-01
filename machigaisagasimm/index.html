@@ -74,7 +74,7 @@
     "texts": {
       "ja": {
         "ui.start": "スタート",
-        "ui.instruction": "間違いは3つあるよ！見つけてね！",
+        "ui.instruction": "間違いは3つあるよ！",
         "ui.sub_instruction": "（下の写真で間違いと思う部分をタッチしてね）",
         "hud.found": "みつけた！ {found} / {total}",
         "result.clear": "素晴らしい！全部見つけれたね！！",
@@ -146,7 +146,7 @@
 
   <div id="start-overlay">
     <p id="start-instruction" style="color: white; font-size: 28px; font-weight: bold; margin-bottom: 10px; text-align: center; text-shadow: 0 2px 10px rgba(0,0,0,0.5);"></p>
-    <p id="start-sub-instruction" style="color: white; font-size: 20px; font-weight: bold; margin-bottom: 30px; text-align: center; text-shadow: 0 2px 10px rgba(0,0,0,0.5);"></p>
+    <p id="start-sub-instruction" style="color: #ff4757; font-size: 24px; font-weight: bold; margin-bottom: 30px; text-align: center; text-shadow: 0 2px 10px rgba(0,0,0,0.8);"></p>
     <button id="start-btn" style="display:none;"></button>
   </div>
 
@@ -225,7 +225,7 @@
     let foundDiffs = [false, false, false];
 
     // タイマー用変数
-    const TIME_LIMIT = 30;
+    const TIME_LIMIT = 45;
     let timeLeft = TIME_LIMIT;
     let timerStartTime = 0;
 

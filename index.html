@@ -85,31 +85,31 @@
         
         <div class="category-block">
             <span class="category-title">運試し系</span>
-            <button class="game-link-btn" style="background: #ffaa00;" onclick="clickGameLog('ガチャ', 'https://010m-xtech.github.io/lab202607/sokutatunamagachamm/')">ガチャ　～何が出るかな～</button>
-            <button class="game-link-btn" style="background: #ffb74d;" onclick="clickGameLog('脱出', 'https://010m-xtech.github.io/lab202607/lostintheforest/')">2択脱出 ～あなたは生還できるかな？～</button>
+            <button class="game-link-btn" style="background: #ffaa00;" onclick="clickGameLog('ガチャ', 'https://010m-xtech.github.io/lab202607/sokutatunamagachamm/')">ガチャ 何が出るかな</button>
+            <button class="game-link-btn" style="background: #ffb74d;" onclick="clickGameLog('脱出', 'https://010m-xtech.github.io/lab202607/lostintheforest/')">脱出 あなたは生還できるかな？</button>
         </div>
 
         <div class="category-block">
             <span class="category-title">攻略系</span>
-            <button class="game-link-btn" style="background: #e73c84;" onclick="clickGameLog('パズル', 'https://010m-xtech.github.io/lab202607/slidingpuzzle/')">パズル ～何秒でクリアできる？～</button>
-            <button class="game-link-btn" style="background: #f06292;" onclick="clickGameLog('寿司打ち5連', 'https://010m-xtech.github.io/minigame/sushigoren/')">記憶力 ～記憶の限界に挑め！～</button>
+            <button class="game-link-btn" style="background: #e73c84;" onclick="clickGameLog('パズル', 'https://010m-xtech.github.io/lab202607/slidingpuzzle/')">パズル 何秒でクリアできる？</button>
+            <button class="game-link-btn" style="background: #f06292;" onclick="clickGameLog('寿司打ち5連', 'https://010m-xtech.github.io/minigame/sushigoren/')">寿司打ち5連 記憶力の限界に挑め！</button>
         </div>
 
         <div class="category-block">
             <span class="category-title">自己検証系</span>
-            <button class="game-link-btn" style="background: #42a5f5;" onclick="clickGameLog('あいしょう占い', 'https://010m-xtech.github.io/minigame/aishouranai/')">占い ～あの人との相性は何％?!～</button>
-            <button class="game-link-btn" style="background: #1a2a6c;" onclick="clickGameLog('クイズ', 'https://010m-xtech.github.io/lab202607/timeshock/')">クイズ ～全問正解に挑戦！～</button>
+            <button class="game-link-btn" style="background: #42a5f5;" onclick="clickGameLog('あいしょう占い', 'https://010m-xtech.github.io/minigame/aishouranai/')">あいしょう占い あの人との相性は何％?!</button>
+            <button class="game-link-btn" style="background: #1a2a6c;" onclick="clickGameLog('クイズ', 'https://010m-xtech.github.io/lab202607/timeshock/')">QUIZタイムショック 全問正解に挑戦！</button>
         </div>
 
         <div class="category-block">
             <span class="category-title">自己表現系</span>
-            <button class="game-link-btn" style="background: #00aa6e;" onclick="clickGameLog('AR撮影', 'https://010m-xtech.github.io/lab202607/photo/')">AR撮影 ～トラックを持ち上げろ～</button>
+            <button class="game-link-btn" style="background: #00aa6e;" onclick="clickGameLog('AR撮影', 'https://010m-xtech.github.io/lab202607/photo/')">AR撮影 トラックを持ち上げろ</button>
         </div>
 
         <div class="category-block">
             <span class="category-title">探索系</span>
-            <button class="game-link-btn" style="background: #7e57c2;" onclick="clickGameLog('まちがい探し', 'https://010m-xtech.github.io/lab202607/machigaisagasimm/')">まちがい探し ～どこが違うか見つけられるかな～</button>
-            <button class="game-link-btn" style="background: #9575cd;" onclick="clickGameLog('アハ体験', 'https://010m-xtech.github.io/lab202607/iwakan_sagasite2/')">アハ体験 ～変化に気づけるか？！～</button>
+            <button class="game-link-btn" style="background: #7e57c2;" onclick="clickGameLog('まちがい探し', 'https://010m-xtech.github.io/lab202607/machigaisagasimm/')">まちがい探し どこが違うか見つけられるかな</button>
+            <button class="game-link-btn" style="background: #9575cd;" onclick="clickGameLog('アハ体験', 'https://010m-xtech.github.io/lab202607/iwakan_sagasite2/')">アハ体験 変化に気づけるか？！</button>
         </div>
     </div>
 
@@ -119,21 +119,19 @@
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbx6BfFXAkV_DvOXjRPq1wL321NeEXcyyTNkgfQdBlBjKga-qJmkDmOyCdFczZ2QRWx9/exec"; 
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxa3Y61z_dks6dCq2m6tyuvHovWDhZwvjyDJ8o_ZVkdY4XX3fJ7BBMjV66FyyQoblQO/exec"; 
 
     let deviceId = ""; 
 
-    async function sendStepLog(stepName) {
-        try {
-            await fetch(GAS_URL, {
-                method: "POST",
-                mode: "no-cors",
-                body: JSON.stringify({ type: "log", step: stepName, deviceId: deviceId })
-            });
-        } catch (e) { console.error(e); }
+    // ★【大改善】通信完了を「待たない」投げっぱなし高速ログ関数に変更
+    function sendStepLog(stepName) {
+        fetch(GAS_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: JSON.stringify({ type: "log", step: stepName, deviceId: deviceId })
+        }).catch(e => console.error(e));
     }
 
-    // 最初にURLを開いたときだけ、これが1回だけ実行されます
     window.onload = () => {
         let savedId = localStorage.getItem('beer_app_device_id');
         if (!savedId) {
@@ -147,19 +145,18 @@
     function submitSurveyAndShowGames(event) {
         if (event) event.preventDefault();
 
-        // 1. ボタンが押されたら、まずは何よりも最優先で画面を「一瞬」で切り替える！
+        // 1. 何よりも最優先で画面を一瞬で切り替える
         document.getElementById('survey-fields-container').classList.add('hidden');
         document.getElementById('game-list-container').classList.remove('hidden');
 
-        // 2. 画面が切り替わった「裏側」で、のんびりデータを取得する
+        // 2. 裏でデータを取得
         const gender = document.getElementById('gender').value;
         const age = document.getElementById('age').value;
         const guests = document.getElementById('guests').value;
         const comment1 = document.getElementById('comment1').value;
         const comment2 = document.getElementById('comment2').value;
 
-        // ※ 必須入力チェック（alert）があると、画面が切り替わった後にポップアップが出て使いづらくなるため、
-        //  「未入力なら自動的に『未記入』という文字にしてGASに送る」という親切設計に変換します。
+        // 未入力チェックの代わりに「未入力文言」で補完（画面フリーズ対策）
         const surveyData = {
             type: "survey", 
             gender: gender || "未選択",   
@@ -170,7 +167,7 @@
             deviceId: deviceId 
         };
         
-        // 3. バックグラウンドで完全に無言でGASへデータを送信（ユーザーはもうゲームを選べます）
+        // 3. バックグラウンドでGASへ送信（返事は一切待たない）
         fetch(GAS_URL, { 
             method: "POST", 
             mode: "no-cors", 
@@ -178,9 +175,11 @@
         }).catch(e => console.error(e));
     }
 
-    async function clickGameLog(gameName, targetUrl) {
-        await sendStepLog(`②ゲーム選択(${gameName})`); 
-        window.location.href = targetUrl;
+    // ★【大改善】「await」を完全に削除！
+    // ログ送信を裏で開始した瞬間（0.01秒後）に、すぐゲームのURLへジャンプする爆速仕様！
+    function clickGameLog(gameName, targetUrl) {
+        sendStepLog(`②ゲーム選択(${gameName})`); 
+        window.location.href = targetUrl; // 待たずに即ジャンプ！
     }
 </script>
 </body>

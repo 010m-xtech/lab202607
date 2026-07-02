@@ -104,10 +104,16 @@
 
         /* タイトル画面用のスタートボタン配置 */
         .title-button-pos {
+            position: fixed;
+            /* 画面中央(50vh)と説明文上部(55vh辺り)の中間にボタンの中心がくるように計算 */
+            top: calc((50vh + (100vh - 16.6% - 150px)) / 2); 
+            transform: translateY(-50%); /* ボタンの中心を基準点にする */
             width: 70%; 
             max-width: 240px;
             z-index: 150;
-            margin: 0 auto;
+            /* X軸手作業調整用マージン（現在は中央寄せ） */
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         .btn-container {
@@ -205,14 +211,19 @@
 
         /* 説明文のスタイル（白文字・シャドウ強調・配置調整） */
         .title-description {
+            position: fixed;
+            bottom: 16.6%; /* 画面最下部から1/6の高さ */
+            left: 50%;
+            transform: translateX(-50%); /* X軸中央寄せ（手作業調整可能） */
             color: #ffffff; 
             text-align: center;
             font-size: 0.95rem;
             line-height: 1.8;
             letter-spacing: 0.08rem;
             text-shadow: 0 2px 4px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.8); 
-            width: 100%;
-            margin-bottom: 10px; /* 【変更】下のボタンとの間に少しだけ余白を作る */
+            width: 90%;
+            max-width: 400px;
+            z-index: 150;
         }
     </style>
 </head>

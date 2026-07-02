@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Lost in the Forest</title>
     <style>
         * {
@@ -19,7 +19,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            /* 【修正】iPhoneのバーに対応するため 100dvh を採用。古いブラウザ用に100vhも併記 */
             min-height: 100vh;
+            min-height: 100dvh;
             overflow: hidden;
             background-size: cover;
             background-position: center;
@@ -48,7 +50,7 @@
             z-index: 100; /* テキストやボタンを絶対的な最前面グループへ */
             pointer-events: none; 
             
-            /* 【変更】上下中央に並べる設定。少し上に引き上げるためにネガティブマージン（-40px）を設定 */
+            /* 上下中央に並べる設定。少し上に引き上げるためにネガティブマージン（-40px）を設定 */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -105,15 +107,16 @@
         /* タイトル画面用のスタートボタン配置 */
         .title-button-pos {
             position: fixed;
-            /* 画面中央(50vh)と説明文上部(55vh辺り)の中間にボタンの中心がくるように計算 */
-            top: calc((50vh + (100vh - 16.6% - 150px)) / 2); 
-            transform: translateY(-50%); /* ボタンの中心を基準点にする */
+            /* JavaScript側で画面中央と説明文上部の中間に自動計算・上書きされます */
+            top: 50%; 
             width: 70%; 
             max-width: 240px;
             z-index: 150;
-            /* X軸手作業調整用マージン（現在は中央寄せ） */
+            
+            /* 【X軸手作業調整用スペース】ディレクターの指定通り、現在はleft: 70%に維持 */
             left: 70%;
-            transform: translate(-50%, -50%);
+            /* 縦横の中心を基準点にするための必須設定 */
+            transform: translate(-50%, -50%); 
         }
 
         .btn-container {
@@ -137,7 +140,7 @@
             font-family: inherit;
             cursor: pointer;
             border-radius: 4px;
-            transition: all 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
             flex: 1;
             height: 65px;
             align-self: center;
@@ -212,7 +215,8 @@
         /* 説明文のスタイル（白文字・シャドウ強調・配置調整） */
         .title-description {
             position: fixed;
-            bottom: 16.6%; /* 画面最下部から1/6の高さ */
+            /* 【修正】iPhoneのSafariバーを考慮し、dvhをベースにした配置に変更 */
+            bottom: 16.6dvh; 
             left: 50%;
             transform: translateX(-50%); /* X軸中央寄せ（手作業調整可能） */
             color: #ffffff; 
@@ -227,7 +231,7 @@
         }
     </style>
 </head>
-<body>
+<body onclick="handleFirstGesture()"> 
 
 <div id="tap-overlay" onclick="nextTrigger()"></div>
 <div id="blood-splatter"></div>
@@ -316,6 +320,16 @@
         }
     }
 
+    function handleFirstGesture() {
+        initAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        if (!bgmInterval && mistakes < maxMistakes) {
+            playMusic();
+        }
+    }
+
     function changeBackground(imgName, useTransition = true) {
         if (useTransition) {
             document.body.style.transition = "background-image 1.2s ease-in-out";
@@ -361,16 +375,36 @@
         titleTextArea.style.display = 'block';
         titleTextArea.innerHTML = `
             あなたは森に迷い込んでしまった...<br>
-            正しい道を${totalSteps}回選択し進めば脱出成功。<br>
+            正しい道を${totalSteps}回選択し進めれば脱出成功。<br>
             もし、${maxMistakes}回誤った道を進んでしまうと...
         `;
 
         // スタートボタンの挿入
         choicesContainer.innerHTML = `
-            <div class="title-button-pos">
+            <div class="title-button-pos" id="title-start-btn">
                 <button onclick="preStartGame()"> 森に入る </button>
             </div>
         `;
+        
+        // 【修正ポイント】iPhoneとAndroid両方でズレない動的座標計算
+        requestAnimationFrame(() => {
+            // 現在の「実際の表示領域（dvh基準）」の数値をブラウザから正確に取得
+            const descRect = titleTextArea.getBoundingClientRect();
+            const bodyRect = document.body.getBoundingClientRect();
+            
+            // 画面の本当の中心Y座標
+            const screenCenterY = bodyRect.height / 2;
+            
+            // 画面中心と説明文上端の「本当の中間地点」を算出
+            const targetTopY = (screenCenterY + descRect.top) / 2;
+            
+            const startBtn = document.getElementById('title-start-btn');
+            if (startBtn) {
+                startBtn.style.top = targetTopY + 'px';
+            }
+        });
+        
+        playMusic();
     }
 
     function preStartGame() {
